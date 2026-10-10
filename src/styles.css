@@ -1,0 +1,363 @@
+:root {
+  /* Surfaces and ink: dark-on-light, tuned for a 1920x1080 screen recording. */
+  --bg: #eef0eb;
+  --surface: #ffffff;
+  --surface-2: #f6f7f4;
+  --ink: #17211d;
+  --ink-2: #4b5751;
+  --ink-3: #6f7a74;
+  --line: #d6dbd3;
+  --line-strong: #b9c1b6;
+
+  /* Meaning */
+  --accent: #0f6b5c;
+  --accent-soft: #e2f0ec;
+  --water: #1d6fb8;
+  --buffer: #c2410c;
+  --ok: #15803d;
+  --ok-soft: #e3f4e8;
+  --warn: #a16207;
+  --warn-soft: #fdf3d7;
+  --danger: #b91c1c;
+  --danger-soft: #fbe5e5;
+  --live: #15803d;
+  --replay: #6d28d9;
+  --replay-soft: #efe7fd;
+  --highlight: #fde68a;
+
+  --radius: 8px;
+  --header-h: 60px;
+  --footer-h: 30px;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  line-height: 1.2;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Layout ---------- */
+
+.app {
+  display: grid;
+  grid-template-rows: var(--header-h) minmax(0, 1fr) var(--footer-h);
+  height: 100vh;
+  height: 100dvh;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.brand-mark {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background:
+    linear-gradient(var(--surface), var(--surface)) 6px 6px / 14px 3px no-repeat,
+    linear-gradient(var(--surface), var(--surface)) 6px 12px / 9px 3px no-repeat,
+    linear-gradient(var(--surface), var(--surface)) 6px 18px / 14px 3px no-repeat,
+    var(--accent);
+}
+
+.brand-name {
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.slot-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.slot-value {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slot-product {
+  flex: 1 1 auto;
+  padding-left: 20px;
+  border-left: 1px solid var(--line);
+}
+
+.header-end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex: none;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.badge-neutral {
+  background: var(--surface-2);
+  border-color: var(--line);
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.badge-live {
+  background: var(--ok-soft);
+  border-color: var(--live);
+  color: var(--live);
+}
+
+.badge-replay {
+  background: var(--replay-soft);
+  border-color: var(--replay);
+  color: var(--replay);
+}
+
+.badge-status {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.badge-status.is-complete {
+  background: var(--ok-soft);
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: minmax(0, 34fr) minmax(0, 40fr) minmax(0, 26fr);
+  gap: 1px;
+  background: var(--line);
+  min-height: 0;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--surface);
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+
+.panel-head h2 {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+}
+
+.panel-pdf .panel-body {
+  background: var(--surface-2);
+}
+
+.map-host {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--surface-2);
+}
+
+.map-host > .placeholder {
+  padding: 16px;
+}
+
+/* ---------- Right panel tabs ---------- */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  height: 44px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+
+.tab {
+  position: relative;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab[aria-selected='true'] {
+  color: var(--accent);
+}
+
+.tab[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -1px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--accent);
+}
+
+.tabpanel {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+}
+
+.tabpanel[hidden] {
+  display: none;
+}
+
+.placeholder {
+  margin: 0;
+  color: var(--ink-3);
+  max-width: 46ch;
+}
+
+.app-footer {
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-3);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Narrow screens: stack the panels ---------- */
+
+@media (max-width: 1100px) {
+  .app {
+    height: auto;
+    min-height: 100vh;
+    grid-template-rows: auto auto auto;
+  }
+
+  .app-header {
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    padding: 10px 16px;
+  }
+
+  .slot-product {
+    flex-basis: 100%;
+    order: 5;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel-pdf,
+  .panel-map {
+    height: 60vh;
+  }
+
+  .panel-side {
+    min-height: 40vh;
+  }
+
+  .app-footer {
+    white-space: normal;
+    padding: 8px 16px;
+  }
+}

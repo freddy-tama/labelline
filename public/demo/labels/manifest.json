@@ -1,0 +1,50 @@
+[
+  {
+    "slug": "brigade2ec",
+    "product": "Brigade 2EC Insecticide/Miticide",
+    "epaRegNo": "279-3313",
+    "sourceUrl": "https://www3.epa.gov/pesticides/chem_search/ppls/000279-03313-20260630.pdf",
+    "retrieved": "2026-10-11",
+    "note": "Ground 25 ft, non-ULV aerial 150 ft and ULV aerial 450 ft aquatic buffers (PDF p7); ULV aerial directions for cotton (PDF p9); ULV on corn is prohibited (PDF p10)."
+  },
+  {
+    "slug": "warrior2",
+    "product": "Warrior II with Zeon Technology",
+    "epaRegNo": "100-1295",
+    "sourceUrl": "https://www3.epa.gov/pesticides/chem_search/ppls/000100-01295-20250703.pdf",
+    "retrieved": "2026-10-11",
+    "note": "ULV is prohibited on rice (PDF p28) but allowed on cotton (PDF p33); New York 25 ft vegetated runoff strip (PDF p14)."
+  },
+  {
+    "slug": "mustangmaxx",
+    "product": "Mustang Maxx Insecticide (PPLS product name: F9114 EC Insecticide; Mustang Maxx is the alternate brand name)",
+    "epaRegNo": "279-3426",
+    "sourceUrl": "https://www3.epa.gov/pesticides/chem_search/ppls/000279-03426-20220816.pdf",
+    "retrieved": "2026-10-11",
+    "note": "Rice fields are exempt from the vegetative filter strip on this label (PDF p7); 7-day floodwater hold on rice (PDF p31)."
+  },
+  {
+    "slug": "asanaxl",
+    "product": "DuPont Asana XL Insecticide",
+    "epaRegNo": "59639-209",
+    "sourceUrl": "https://www3.epa.gov/pesticides/chem_search/ppls/059639-00209-20260414.pdf",
+    "retrieved": "2026-10-11",
+    "note": "PPLS version dated 2026-04-14 (registration review mitigation amendment); aquatic buffers on PDF p9."
+  },
+  {
+    "slug": "upcyde25ec",
+    "product": "UP-Cyde 2.5 EC Agricultural Insecticide",
+    "epaRegNo": "70506-20",
+    "sourceUrl": "https://www3.epa.gov/pesticides/chem_search/ppls/070506-00020-20231122.pdf",
+    "retrieved": "2026-10-11",
+    "note": "Legacy 2008-style drift language with a 10 ft filter strip (label Rev. 3/30/2023, PPLS notification 2023-11-22); the printed label itself reads \"10-fout\"."
+  },
+  {
+    "slug": "baythroidxl",
+    "product": "Baythroid XL",
+    "epaRegNo": "264-840",
+    "sourceUrl": "https://www3.epa.gov/pesticides/chem_search/ppls/000264-00840-20191007.pdf",
+    "retrieved": "2026-10-11",
+    "note": "legacy label language predating the 2020 beta-cyfluthrin interim decision; not presented as current"
+  }
+]

@@ -1,0 +1,34 @@
+{
+  "name": "labelline",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Reads a pesticide label PDF, verifies each water-buffer sentence against the page, and draws the buffers on your field.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "eval": "tsx eval/run-eval.ts"
+  },
+  "dependencies": {
+    "@geoman-io/leaflet-geoman-free": "^2.20.2",
+    "@turf/turf": "^7.4.0",
+    "leaflet": "^1.9.4",
+    "pdfjs-dist": "^6.4.299"
+  },
+  "devDependencies": {
+    "@types/geojson": "^7946.0.16",
+    "@types/leaflet": "^1.9.22",
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.3"
+  }
+}

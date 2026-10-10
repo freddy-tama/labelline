@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="LabelLine reads a pesticide label PDF, verifies each buffer sentence against the page, and draws the buffers on your field." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f6b5c'/%3E%3Cpath d='M8 23h16M8 16h10M8 9h16' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <title>LabelLine</title>
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="brand-name">LabelLine</span>
+        </div>
+
+        <div class="slot slot-product" data-slot="product">
+          <span class="slot-label">Label</span>
+          <span class="slot-value" id="product-value">No label loaded</span>
+        </div>
+
+        <div class="slot" data-slot="method" id="slot-method">
+          <span class="slot-label">Method</span>
+          <span class="slot-value" id="method-value"></span>
+        </div>
+
+        <div class="slot" data-slot="crop" id="slot-crop">
+          <span class="slot-label">Crop</span>
+          <span class="slot-value" id="crop-value"></span>
+        </div>
+
+        <div class="header-end">
+          <div class="slot" data-slot="mode" id="slot-mode">
+            <span class="badge badge-neutral" id="mode-badge">No extraction yet</span>
+          </div>
+          <div class="slot" data-slot="status" id="slot-status">
+            <span class="badge badge-status" id="status-badge" role="status">Screening incomplete</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="panels">
+        <section class="panel panel-pdf" aria-labelledby="pdf-heading">
+          <div class="panel-head">
+            <h2 id="pdf-heading">Label</h2>
+          </div>
+          <div class="panel-body" id="pdf-host">
+            <p class="placeholder">Label pages and their highlighted sentences will appear here.</p>
+          </div>
+        </section>
+
+        <section class="panel panel-map" aria-labelledby="map-heading">
+          <div class="panel-head">
+            <h2 id="map-heading">Field</h2>
+          </div>
+          <div class="map-host" id="map">
+            <p class="placeholder">The aerial map, mapped and observed water, and buffers will appear here.</p>
+          </div>
+        </section>
+
+        <aside class="panel panel-side" aria-label="Screening">
+          <div class="tabs" role="tablist" aria-label="Screening views">
+            <button class="tab" type="button" role="tab" id="tab-restrictions" aria-controls="tabpanel-restrictions" aria-selected="true">Restrictions</button>
+            <button class="tab" type="button" role="tab" id="tab-checklist" aria-controls="tabpanel-checklist" aria-selected="false" tabindex="-1">Checklist</button>
+            <button class="tab" type="button" role="tab" id="tab-evidence" aria-controls="tabpanel-evidence" aria-selected="false" tabindex="-1">Evidence</button>
+          </div>
+
+          <div class="tabpanel" role="tabpanel" id="tabpanel-restrictions" aria-labelledby="tab-restrictions" tabindex="0">
+            <p class="placeholder">Restrictions extracted from the label, each with its quote, page and verification status, will be listed here.</p>
+          </div>
+          <div class="tabpanel" role="tabpanel" id="tabpanel-checklist" aria-labelledby="tab-checklist" tabindex="0" hidden>
+            <p class="placeholder">The screening checklist will be listed here.</p>
+          </div>
+          <div class="tabpanel" role="tabpanel" id="tabpanel-evidence" aria-labelledby="tab-evidence" tabindex="0" hidden>
+            <p class="placeholder">Measured extraction results on real labels will be shown here.</p>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="app-footer">
+        Screening aid, not a legal determination. The label and the applicator's judgment govern.
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
