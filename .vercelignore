@@ -1,0 +1,7 @@
+# Keep the API key and dev-only screenshots out of any `vercel` CLI upload.
+# (Vercel's default ignore list covers .env.local and .env.*.local but not .env.)
+# Do NOT ignore eval/: the Evidence tab bundles eval/results.json at build time.
+.env
+.env.*
+!.env.example
+hackathon/screens/

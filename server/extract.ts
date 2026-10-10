@@ -22,9 +22,13 @@ import {
 export const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 export const DEFAULT_MODEL = 'gemini-3.8-flash';
 export const DEFAULT_FALLBACK_MODEL = 'gemini-3.5-flash-lite';
-export const CALL_TIMEOUT_MS = 60_000;
-/** Total time for all attempts. Keep the function's maxDuration above this (vercel.json). */
-export const DEFAULT_BUDGET_MS = 170_000;
+/** One generateContent call. Two full calls (primary, then fallback or a RECITATION retry) fit the budget. */
+export const CALL_TIMEOUT_MS = 25_000;
+/**
+ * Total time for all attempts. vercel.json caps api/extract.ts at maxDuration 60 s; this leaves about 5 s
+ * for reading the upload and sending the 502, so a slow upstream ends in our JSON error, not a platform 504.
+ */
+export const DEFAULT_BUDGET_MS = 55_000;
 export const MAX_OUTPUT_TOKENS = 32_768;
 
 export interface RequestVariant {

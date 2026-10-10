@@ -8,9 +8,10 @@ import './styles.css';
 
 import { store, type AppState, type WaterCollection } from './store';
 import type { Method, VerifiedRestriction } from './types';
-import { openPdf, type PDFDocumentProxy } from './pdf/pdfjs';
+// pdf.js and the viewer load on demand (loadPdfModules), so they stay out of the first page load.
+import type { PDFDocumentProxy } from './pdf/pdfjs';
 import { extractPageTextMaps, hasTextLayer, toPageTexts } from './pdf/textmap';
-import { PdfViewer } from './pdf/viewer';
+import type { PdfViewer } from './pdf/viewer';
 import { ExtractionError, hasReplay, runExtraction, type ExtractionResult } from './extract/client';
 import {
   getMap,
@@ -35,7 +36,7 @@ import { openRecordWindow, renderRecord } from './record/export';
 import { byId } from './ui/dom';
 import { initHeader, renderHeader } from './ui/header';
 import { renderRestrictions, revealCard, type RestrictionsHandlers } from './ui/restrictionsPanel';
-import { renderChecklist } from './ui/checklistPanel';
+import { labelChangeActions, renderChecklist, resetChecklistDrafts } from './ui/checklistPanel';
 import { renderEvidence } from './ui/evidence';
 import { renderWind } from './ui/windStrip';
 import { renderReadout, renderWaterChip, renderWaterNotes } from './ui/fieldPanel';
@@ -87,12 +88,47 @@ function initTabs(): void {
 
 const pdfHost = byId('pdf-host');
 const pdfEmpty = byId('pdf-empty');
-const viewer = new PdfViewer({
-  onHighlightClick: (id) => selectRestriction(id, 'pdf'),
-  onHighlightHover: (id) => view.set({ hoverId: id }),
-});
-pdfHost.append(viewer.root);
-viewer.root.hidden = true;
+
+interface PdfModules {
+  openPdf: typeof import('./pdf/pdfjs').openPdf;
+  PdfViewer: typeof import('./pdf/viewer').PdfViewer;
+}
+
+let pdfModules: Promise<PdfModules> | null = null;
+
+/** pdf.js (with its worker) and the viewer, fetched once on first use. A failed fetch can be retried. */
+function loadPdfModules(): Promise<PdfModules> {
+  pdfModules ??= Promise.all([import('./pdf/pdfjs'), import('./pdf/viewer')]).then(
+    ([pdfjs, viewerModule]) => ({ openPdf: pdfjs.openPdf, PdfViewer: viewerModule.PdfViewer }),
+    (error: unknown) => {
+      pdfModules = null;
+      throw new Error(`The PDF viewer could not be loaded (${errorText(error)}). Check the connection, then load the label again.`);
+    },
+  );
+  return pdfModules;
+}
+
+/** Starts fetching the PDF modules early (pointer on the label controls) without surfacing errors yet. */
+function warmPdfModules(): void {
+  loadPdfModules().catch(() => undefined);
+}
+
+/** Created with the first label; null until then. */
+let viewer: PdfViewer | null = null;
+
+function ensureViewer(Viewer: PdfModules['PdfViewer']): PdfViewer {
+  if (viewer) return viewer;
+  const created = new Viewer({
+    onHighlightClick: (id) => selectRestriction(id, 'pdf'),
+    onHighlightHover: (id) => view.set({ hoverId: id }),
+  });
+  pdfHost.append(created.root);
+  created.setRestrictions(store.get().restrictions);
+  created.setActive(view.get().activeId);
+  created.setHover(view.get().hoverId);
+  viewer = created;
+  return created;
+}
 
 let currentDoc: PDFDocumentProxy | null = null;
 let currentSample: SampleLabel | null = null;
@@ -109,13 +145,22 @@ async function loadLabel(source: LabelSource): Promise<void> {
   const name = source.kind === 'sample' ? source.sample.product : source.file.name;
   currentSample = source.kind === 'sample' ? source.sample : null;
   byId<HTMLSelectElement>('sample-select').value = source.kind === 'sample' ? source.sample.slug : '';
+  // Fetch pdf.js + viewer while the label downloads; awaited below. The no-op catch only keeps an early
+  // failure from being reported as unhandled; awaiting the same promise still throws into the catch below.
+  const modulesReady = loadPdfModules();
+  modulesReady.catch(() => undefined);
 
   selectTab('restrictions');
   view.set({ extraction: { phase: 'loading_pdf', name }, activeId: null, hoverId: null });
   store.set({ labelFile: null, pages: [], restrictions: [], extractMeta: null, mode: 'live' });
-  viewer.clear();
+  // A new label starts a new screening: the previous label's bulletin check, on-site wind and mitigation
+  // entries (and their unsent drafts) must not carry over into this label's record. The field walk stays,
+  // because the field does.
+  for (const action of labelChangeActions()) dispatch(action);
+  resetChecklistDrafts('label');
+  viewer?.clear();
   pdfEmpty.hidden = true;
-  viewer.root.hidden = false;
+  if (viewer) viewer.root.hidden = false;
 
   try {
     let blob: Blob;
@@ -139,6 +184,11 @@ async function loadLabel(source: LabelSource): Promise<void> {
       },
     });
 
+    const { openPdf, PdfViewer } = await modulesReady;
+    if (ctrl.signal.aborted) return;
+    const pdfViewer = ensureViewer(PdfViewer);
+    pdfViewer.root.hidden = false;
+
     const doc = await openPdf({ data: bytes });
     if (ctrl.signal.aborted) {
       void doc.loadingTask.destroy();
@@ -146,7 +196,7 @@ async function loadLabel(source: LabelSource): Promise<void> {
     }
     const previous = currentDoc;
     currentDoc = doc;
-    await viewer.load(doc);
+    await pdfViewer.load(doc);
     void previous?.loadingTask.destroy();
     if (ctrl.signal.aborted) return;
 
@@ -155,7 +205,7 @@ async function loadLabel(source: LabelSource): Promise<void> {
       if (!ctrl.signal.aborted) view.set({ extraction: { phase: 'reading_text', done, total } });
     });
     if (ctrl.signal.aborted) return;
-    viewer.setTextMaps(maps);
+    pdfViewer.setTextMaps(maps);
     const pages = toPageTexts(maps);
     store.set({ pages });
     if (!hasTextLayer(pages)) {
@@ -263,7 +313,7 @@ function selectRestriction(id: string, from: 'card' | 'pdf'): void {
   view.set({ activeId: id });
   const r = store.get().restrictions.find((x) => x.id === id);
   if (from === 'card') {
-    const shown = viewer.scrollToRestriction(id);
+    const shown = viewer?.scrollToRestriction(id) ?? false;
     if (!shown && r && !r.match) showToast(`Clause ${id} was not found in the PDF text, so there is no sentence to highlight. Check the label directly.`);
   } else {
     selectTab('restrictions');
@@ -296,7 +346,7 @@ onFieldChange((field) => store.set({ field }));
 onObservedWaterChange((fc) => store.set({ observedWater: fc as unknown as WaterCollection }));
 onBufferHover((id) => {
   view.set({ hoverId: id });
-  if (id) viewer.scrollToRestriction(id, { onlyIfHidden: true });
+  if (id) viewer?.scrollToRestriction(id, { onlyIfHidden: true });
 });
 
 let waterAbort: AbortController | null = null;
@@ -512,8 +562,8 @@ function renderToast(v: Readonly<ViewState>): void {
 
 /** Active/hover emphasis on cards and PDF highlights, without rebuilding the list. */
 function updateEmphasis(v: Readonly<ViewState>): void {
-  viewer.setActive(v.activeId);
-  viewer.setHover(v.hoverId);
+  viewer?.setActive(v.activeId);
+  viewer?.setHover(v.hoverId);
   for (const el of byId('tabpanel-restrictions').querySelectorAll<HTMLElement>('.clause')) {
     el.classList.toggle('is-active', el.dataset.id === v.activeId);
     el.classList.toggle('is-hover', el.dataset.id === v.hoverId);
@@ -548,7 +598,7 @@ store.subscribe((state, prev, changed) => {
   if (has('field')) setField(state.field);
   if (has('observedWater')) setObservedWater(state.observedWater);
   if (has('mappedWater')) setMappedWater(state.mappedWater);
-  if (has('restrictions', 'pages')) viewer.setRestrictions(state.restrictions);
+  if (has('restrictions', 'pages')) viewer?.setRestrictions(state.restrictions);
 
   if (has('restrictions', 'method', 'crop', 'observedWater', 'extractMeta')) schedule('checklist');
   if (has('restrictions', 'method', 'crop', 'field', 'observedWater', 'mappedWater')) schedule('geometry');
@@ -639,6 +689,12 @@ function initLabelControls(): void {
     input.value = '';
   });
   const panel = byId('pdf-panel');
+  // Reaching for a label control starts the pdf.js download, so it overlaps the user's choice.
+  for (const el of [select, input.closest('label') ?? input]) {
+    el.addEventListener('pointerdown', warmPdfModules, { once: true });
+    el.addEventListener('focusin', warmPdfModules, { once: true });
+  }
+  panel.addEventListener('dragenter', warmPdfModules, { once: true });
   panel.addEventListener('dragover', (event) => {
     if (!event.dataTransfer?.types.includes('Files')) return;
     event.preventDefault();

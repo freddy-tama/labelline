@@ -16,6 +16,7 @@ import {
   summariseClauses,
   type ChecklistAction,
   type ChecklistItem,
+  type UserItemId,
 } from '../checklist/machine';
 import { copyText, fmtChicago, h, icon, replaceKeepingFocus } from './dom';
 import type { SampleLabel } from './viewState';
@@ -27,16 +28,39 @@ export interface ChecklistHandlers {
   onToast(text: string): void;
 }
 
-// Unsent form input survives re-renders (the panel re-renders whenever the store changes).
-const drafts = {
-  bulletin: '',
-  printable: false,
-  walked: false,
-  zero: false,
-  wind: '',
-  mitigationApplicable: null as boolean | null,
-  mitigationText: '',
-};
+/** Unsent form input. It survives re-renders (the panel re-renders whenever the store changes). */
+export interface ChecklistDrafts {
+  bulletin: string;
+  printable: boolean;
+  walked: boolean;
+  zero: boolean;
+  wind: string;
+  mitigationApplicable: boolean | null;
+  mitigationText: string;
+}
+
+export function emptyChecklistDrafts(): ChecklistDrafts {
+  return { bulletin: '', printable: false, walked: false, zero: false, wind: '', mitigationApplicable: null, mitigationText: '' };
+}
+
+const drafts: ChecklistDrafts = emptyChecklistDrafts();
+
+/**
+ * Checklist items that belong to one label's screening. Loading another label clears them: the bulletin
+ * is checked per EPA Reg. No., and the on-site wind reading and mitigation note were recorded for the
+ * previous product, before this label was loaded. The field walk belongs to the field, which stays.
+ */
+export const LABEL_SCOPED_ITEMS: readonly UserItemId[] = ['blt_checked', 'onsite_wind', 'mitigation_credits'];
+
+/** Reducer actions for a newly loaded label (clauses_confirmed re-derives from the new, empty restriction list). */
+export function labelChangeActions(): ChecklistAction[] {
+  return LABEL_SCOPED_ITEMS.map((item) => ({ type: 'clear', item }));
+}
+
+/** Drafts after a label change: label-scoped input is dropped, the field-walk checkboxes stay with the field. */
+export function draftsForNewLabel(current: Readonly<ChecklistDrafts>): ChecklistDrafts {
+  return { ...emptyChecklistDrafts(), walked: current.walked, zero: current.zero };
+}
 
 function copyRow(label: string, value: string | null, key: string, handlers: ChecklistHandlers, missing: string): HTMLElement {
   return h(
@@ -347,13 +371,7 @@ export function renderChecklist(container: HTMLElement, state: Readonly<AppState
   replaceKeepingFocus(container, head, clausesItem, bltItem, walkItem, windItem, mitigationItem);
 }
 
-/** Clears unsent drafts (a new label or a reset). */
-export function resetChecklistDrafts(): void {
-  drafts.bulletin = '';
-  drafts.printable = false;
-  drafts.walked = false;
-  drafts.zero = false;
-  drafts.wind = '';
-  drafts.mitigationApplicable = null;
-  drafts.mitigationText = '';
+/** Clears unsent drafts: 'label' for a newly loaded label (field-walk input kept), 'all' for a full reset. */
+export function resetChecklistDrafts(scope: 'label' | 'all' = 'all'): void {
+  Object.assign(drafts, scope === 'label' ? draftsForNewLabel(drafts) : emptyChecklistDrafts());
 }
