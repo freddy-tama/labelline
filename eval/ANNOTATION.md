@@ -1,6 +1,6 @@
 # Answer-key annotation (eval/answer-key.json)
 
-On 2026-10-11 the 6 bundled sample labels (brigade2ec, warrior2, mustangmaxx, asanaxl, upcyde25ec, baythroidxl) were annotated so that `eval/score.ts` can match extracted restrictions by kind, method, crop and number. The other 4 entries (pounce32ec, pounce25wp, epa2008letter, mda_setbacks) are unchanged and are not scored, because their PDFs are not bundled.
+On 2026-10-11 a LabelLine build agent (Leg I) annotated the 6 bundled sample labels (brigade2ec, warrior2, mustangmaxx, asanaxl, upcyde25ec, baythroidxl) so that `eval/score.ts` can match extracted restrictions by kind, method, crop and number. The other 4 entries (pounce32ec, pounce25wp, epa2008letter, mda_setbacks) are unchanged and are not scored, because their PDFs are not bundled.
 
 Each quote was read in context in the pdf.js text of the bundled PDF. This is the same loader and line join the app uses (`src/pdf/pdfjs.node.ts`, `src/pdf/textmap.ts`). The method comes from the heading the sentence sits under, for example "Ground Application –", "Ultra Low Volume (ULV) Aerial Application -" or "Airblast Applications:".
 
@@ -88,7 +88,7 @@ The numberless sentences that were added (boom length, swath, nozzle and release
 
 ## In the PDFs but not keyed
 
-The scorer still credits any of these in precision when an extraction quotes them and the quote verifies with its number.
+Precision does not credit these: an extraction that quotes one counts as not correct, even when its quote and number verify, and is listed in the results as "not in the answer key" (with a count, `notInKey`). A distance or wind clause in this list therefore lowers measured precision although it is a real clause; read the listed extras before concluding the model was wrong.
 
 - **Other crop-section ULV prohibitions:**
   - Brigade: the corn sentence reprinted on p11 and p13, and hops on p17;
@@ -106,4 +106,4 @@ The scorer still credits any of these in precision when an extraction quotes the
 
 ## Known limit this exposed
 
-The schema has no state field. A New York-only clause, such as Brigade's 100 ft ground buffer or Warrior II's 25 ft runoff strip, carries its scope only in `note`. If a user confirms it, the app would draw it on a Texas field.
+The schema had no state field, so a New York-only clause, such as Brigade's 100 ft ground buffer or Warrior II's 25 ft runoff strip, carried its scope only in `note`, and confirming it would have drawn it on a Texas field. Fixed after review: the schema now has an optional two-letter `state`, and `src/extract/stateScope.ts` also reads the scope from the verified sentence ("In New York State …"). The app never draws or screens with a state-limited clause, because it has no state selector; the card reads "New York only — not applied" and the checklist flags it. The scorer still matches these key items by kind, method, crop and number only.

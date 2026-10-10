@@ -44,7 +44,7 @@ labelline/
     extractions/<slug>.json  recorded Gemini outputs from real runs during the hack (timestamped)
     water/<field>.geojson    cached NHD/NWI response for the demo field (timestamped, source URL)
   eval/
-    answer-key.json          hand-checked restrictions per label (from the research answer key)
+    answer-key.json          restrictions per label, compiled and annotated by AI agents, machine-checked against the PDFs
     run-eval.ts              runs extraction on each label (live or recorded) -> results.json
     results.json             recall / precision / verified-quote rate per label (generated, committed)
   tests/
@@ -334,6 +334,19 @@ Fallback: if the live API fails during the demo, use **Replay**, with the badge 
 - **Readout** names the rule: "<d> ft buffer … from clause <id> (p. <n>): the largest confirmed water buffer for <method> or any method[, on <crop>]".
 - **Eval scoring** (`eval/score.ts`, written into `results.json` as `scoring`): one-to-one maximum matching on kind, method (or the key's `acceptMethods`), compatible crops, equal numbers, prohibition only by prohibition, page within ±1.
   - Recall denominators (groups with a distance or wind number): Brigade 12, Warrior 10, Mustang 9, Asana 9, UP-Cyde 7, Baythroid 8 = 55; plus 3 keyed crop prohibitions (Brigade corn p10, Warrior II rice p28, Mustang Maxx rice p31).
-  - Precision is stricter than section 5's wording: a verified clause that contradicts the key item for the same sentence (kind or number) counts as wrong. `keyMatchedPrecision` (key matches only) is reported too.
+  - Precision *(revised in the review fixes below)*: extracted distance/wind clauses that match a key item / all extracted distance/wind clauses. A clause whose sentence is a key sentence but whose kind, method, crops or number disagree is wrong; a clause found in the PDF whose sentence is not in the key gets no credit (`notInKey`). The earlier rule credited any verified clause that did not contradict the key on kind or number, which let a method-mistagged buffer count as correct; `keyMatchedPrecision` is gone because `precision` is now that strict number.
   - Labels without data are listed in `skipped`, never scored as zero; `results.json` is written only when at least one label was scored.
 - **Replay recordings** (`npm run record`, `scripts/record-replay.ts`): the unmodified 200 body plus `mode: "replay"`, `recordedAt`, `sourceRun` and `pdfSha256`; the eval rejects a recording whose `pdfSha256` does not match the bundled PDF. The recorder and the eval default to `http://localhost:5180/`, so run `npm run dev -- --port 5180` (or pass `--base`).
+
+**Review-fix decisions (added 2026-10-11 ~05:00 UTC+8, commit "fix: review findings"). These record what the code does; they override earlier sections where they differ.**
+
+- **Eval precision is strict** (`eval/score.ts`): only clauses that match an answer-key item count as correct (a repeat of an already matched key item counts once in recall and as correct). Wrong method, crops, kind or number on a key sentence is wrong. Verified clauses outside the key are not credited and are counted in `notInKey`; unmatched prohibitions are counted in `unmatchedProhibitions`. The Evidence tab shows both counts. The answer key is described as agent-compiled and machine-checked, not expert-reviewed.
+- **State-limited clauses** (`src/extract/stateScope.ts`): `Restriction.state` (two-letter code, optional in the Gemini schema); when absent, a state named as the scope in the verified sentence ("In New York State …") counts. `selectWaterBuffer` skips them with `other_state`, `appliesTo`/`summariseClauses` exclude them (buffer and wind), the card says "<State> only — not applied", and `clauses_confirmed` flags them. There is no state selector.
+- **Status with flags** (`screeningStatus` in `src/checklist/machine.ts`): complete + flags = "Screening recorded · N flags" in the warning style in the header, the checklist summary and the record; green "Screening complete" only with no flags.
+- **Record wording:** the buffer basis comes from `restrictionId`/`prohibited`, not from `union` (an applicable clause with no water within reach says so); PALM "Label buffer" uses the applicable clause even without a buffer area; product and Reg. No. fall back to the sample manifest (tagged "from the bundled sample manifest, not extracted"); the label row prints the PPLS URL and retrieval date; the sample field reads "Sample field loaded"; the gust check is named as LabelLine's own.
+- **New field = new location** (`onFieldChange(field, change)` in `src/map/map.ts`): 'new' (field tool or sample) and 'removed' clear `blt_checked`, `field_walked` and `onsite_wind` and their drafts; 'edited' (vertex edit) keeps them. On 'new', observed water outside the new field's buffer reach (`waterNearField`) is dropped.
+- **Re-runs keep the result:** `extract()` snapshots the restrictions, decisions and meta on screen; a failed or cancelled live re-run (or a failed recording reload) restores them and shows the failure as a notice.
+- **PDF errors:** "Try again" after a PDF that failed to open reloads the last label source; the sample list resets to "" so re-choosing the same sample fires.
+- **Sample labels:** `manifest.json` entries carry `pdfSha256`; an upload with the same bytes is treated as that sample (slug, header, Reg. No., recording fallback) with a note. `legacy`/`legacyNote` (Baythroid XL, UP-Cyde 2.5 EC) show "Older label wording, not current" under the label controls, in the Restrictions tab and in the record.
+- **Sample-field water:** layer deadlines are 6 s for the sample field (backed by the dated cache), 25 s/15 s elsewhere.
+- **Layout:** the wind strip's screen-reader table sits inside an `.sr-only` div (a hidden table kept its height and made the page scroll); at widths above 1100 px `html, body` do not scroll.

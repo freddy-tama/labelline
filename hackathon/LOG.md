@@ -30,6 +30,17 @@ All times are local UTC+8 unless marked otherwise. The hacking window runs from 
   5. Ask the organisers how remote teams demo (open question 1) and whether prizes can be paid by PayPal or Wise (open question 2).
   6. Record the voice and video, and submit on Devpost. The plan's draft deadline is 23:19.
 
+## Cycle 5 — 04:30–05:00 (review fixes)
+
+- **Target:** the verified review findings (correctness, honesty and demo-path lenses). The demo-path BLOCKER (no recordings, no `eval/results.json`) still needs the user's Gemini key; only its README claim was fixed.
+- **Change:** strict eval precision with `notInKey` / `unmatchedProhibitions` counts; state-limited (New York) clauses never drawn; record basis and PALM row worded from the applicable clause; "Screening recorded · N flags" instead of green complete; a new field clears the bulletin, walk and wind entries; a failed "Run live" keeps the earlier result; PDF-error retry; legacy-label notices; upload recognised by SHA-256; gust check named as LabelLine's own; wind-strip page-scroll fix; 6 s water deadlines for the sample field; README, BUILD_SPEC, PITCH and ANNOTATION wording.
+- **Commits:** `ce6a011` fix: review findings; docs: review findings (this entry).
+- **Evidence:**
+  - `npm run typecheck` exit 0; `npm test` 307/307 in 22 files; `npm run build` exit 0 (index 921 kB, gzip 253 kB); no key strings in `dist/`.
+  - Real-PDF tests: the Brigade p7 450 ft sentence tagged ground scores precision 1/2; "30 days of harvest" as a 30 ft buffer scores 0/1 (`notInKey` 1); Brigade's New York 300/100 ft clauses verify, are detected as NY-only, and leave Aerial 150 ft and Ground 25 ft.
+  - Dev server (port 5183) in the in-app browser, with an in-page fetch stub serving an answer-key DEV FIXTURE as the Brigade recording (memory only, no file written): NY clauses carded "New York only — not applied"; Aerial 150 ft and Ground 25 ft with NY confirmed; 21 mph on-site gives "Screening recorded · 2 flags" (`is-flagged`); the exported record shows the manifest product and Reg. No. (tagged), "Sample field loaded" and the PPLS URL; reloading the sample field cleared the bulletin, walk and wind; "Run live" (503) kept the 10 confirmed clauses with a notice; a forced PDF 502 then "Try again" reloaded Warrior II; Baythroid XL shows the legacy notice; uploading brigade2ec.pdf was recognised (header, Reg. No., REPLAY fallback); a stubbed NHD hang resolved to "partly live (cached)" in 6.3 s; at 1280×600 `scrollHeight` equals the viewport and a wheel over the wind strip leaves `scrollY` 0; at 375 px the stacked page still scrolls with no horizontal overflow.
+- **Next:** the user's key → `npm run record` for brigade2ec and warrior2 (ideally all 6) → `npm run eval` → commit the recordings and `eval/results.json`.
+
 ## Cycle 4 — 03:35–04:15 (Legs G, H, I and J in parallel, then merge)
 
 - **Target:** the build check's ranked gaps: 3 (hosting), 5 (water reliability), 6 (checklist carry-over), 7 (pdf.js resources), 10 (first-load weight) in Leg G/H; 2 (eval) in Leg I; 4, 8 and 9 (fixture frames, README, buffer rule) in Leg J. Gap 1 (real extraction data) needs the user's key.

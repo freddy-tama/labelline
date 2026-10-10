@@ -16,7 +16,7 @@ There were no position flips. The full record is in the scratchpad: `codered/for
 The pesticide label is the law. LabelLine reads it and draws it: every "do not apply within X feet of water" sentence becomes a buffer on your actual field.
 
 ## User and moment
-5:30 AM on a rice or cotton field on the Texas Gulf Coast. A commercial applicator licensed by the Texas Department of Agriculture is about to spray a pyrethroid by air on a field next to a bayou. Under FIFRA, the label is the law, and its buffers depend on the application method. Typical values in EPA's 2015 pyrethroid drift language are 25 ft for ground, 150 ft for non-ULV aerial and 450 ft for ULV aerial, plus a 10-ft vegetative filter strip; they vary by label. A misread 20-page label means fish kills and drift complaints. The applicator still makes the call; LabelLine makes sure the label's distances were read correctly and drawn in the right place.
+5:30 AM on a rice or cotton field on the Texas Gulf Coast. A commercial applicator licensed by the Texas Department of Agriculture is about to spray a pyrethroid by air on a field next to a bayou. Under FIFRA, the label is the law, and its buffers depend on the application method. Typical values in the pyrethroid spray drift language from EPA's letter of February 21, 2008 (hosted in a 2015 folder on epa.gov) are 25 ft for ground, 150 ft for non-ULV aerial and 450 ft for ULV aerial, plus a 10-ft vegetative filter strip; they vary by label. A misread 20-page label means fish kills and drift complaints. The applicator still makes the call; LabelLine makes sure the label's distances were read correctly and drawn in the right place.
 
 ## Before → after
 **Before:** the applicator reads a 20-plus-page PDF, remembers "150 ft", and estimates distances by eye. Small ditches and ponds that federal maps miss go unnoticed.
@@ -50,25 +50,25 @@ Without Gemini, the product doesn't exist. A regex misses phrasing variants and 
 
 ## Data
 - **Labels:** real label PDFs from EPA's Pesticide Product Label System.
-- **Answer key:** EPA's 2015 pyrethroid spray drift letter and the Minnesota Department of Agriculture's setback summary, used to hand-check the extractions.
+- **Answer key:** compiled from the 6 bundled label PDFs by AI research and build agents: 129 annotated quotes, each machine-checked against the PDF text, with the uncertain calls listed in `eval/ANNOTATION.md`. It has not been reviewed by a pesticide-label expert. EPA's pyrethroid spray drift letter (February 21, 2008) and the Minnesota Department of Agriculture's setback summary were research sources; they are not scored.
 - **Water features:** USGS NHD and USFWS NWI.
 - **Weather:** Open-Meteo.
 - **Link-outs:** EPA Bulletins Live! Two and the Spray Drift Calculator.
 - **Demo field:** a labelled sample location.
 
 ## Gap and wedge
-- **US tools don't read the label.** EPA's Spray Drift Calculator and PALM start from a buffer distance the applicator has already read and typed in. Bulletins Live! Two covers endangered-species limits, not label drift buffers. FieldWatch maps sensitive sites.
+- **EPA's own tools start after the label is read.** EPA's Spray Drift Calculator and PALM start from a buffer distance the applicator has already read and typed in. Bulletins Live! Two covers endangered-species limits, not label drift buffers. FieldWatch maps sensitive sites.
 - **Germany has structured data, the US doesn't.** Germany's Pesticide-Application-Manager uses structured authorisation codes. US labels hold the same rules as free text in each PDF.
 - **LabelLine is the step before EPA's tools:** label sentence → verified distance → geometry on the field.
 
-The pre-build research workflow is checking this.
+The pre-build prior-art scan (BUILD_SPEC section 10) found tools that already do parts of this: Labelhand, PigeonEye, EPA Salmon Mapper, Acre Blitz and AgriGuard. LabelLine does not claim to be first at quote verification, on-page highlighting, wind screening, drift maps or buffer maps. Its claim is the combination below.
 
 ## Criteria fit
 | Criterion | How LabelLine scores |
 |---|---|
-| Originality | Label text becomes field geometry, a step no US tool does |
+| Originality | The combination: any label PDF → per-method distances with page-verified quotes → buffers on federal and observed water cut from your field → acres outside buffers drawn so far, with Bulletins Live! Two as an explicit unchecked step |
 | Relevance (Environment) | Pesticide drift into water, aquatic life, pollinators |
-| Impact | Every US label carries these restrictions; around 1M+ certified applicators (number to verify) |
+| Impact | Every US pesticide label carries these restrictions, and every applicator who sprays near water has to apply them |
 | Demo | Deterministic geometry plus a cached replay of the extraction |
 | Technical | Quote verification, unit-tested geometry, and a measured extraction eval on real labels |
 
