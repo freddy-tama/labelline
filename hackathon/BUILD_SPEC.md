@@ -216,7 +216,12 @@ Fallback: if the live API fails during the demo, use **Replay**, with the badge 
 - **Request:** POST form-urlencoded, with these parameters: `geometry={"rings":[...],"spatialReference":{"wkid":4326}}`, `geometryType=esriGeometryPolygon`, `inSR=4326`, `spatialRel=esriSpatialRelIntersects`, `distance=<maxBufferMeters*1.05+20>`, `units=esriSRUnit_Meter`, `outSR=4326`, `geometryPrecision=6`, `f=geojson`.
 - **Paging:** `orderByFields=OBJECTID&resultOffset&resultRecordCount` (500 for NWI, 2000 for NHD), repeated until `exceededTransferLimit` is absent.
 - **Errors:** a response body containing `error` is a failure. ArcGIS returns errors as HTTP 200. A failure is never treated as "no water".
-- **Timeout:** 12 s, then fall back to the committed demo GeoJSON, labelled with its retrieval date. Don't send credentials, and skip NHD layer 9.
+- **Timeout** *(updated 04:10 from Leg H; was a single 12 s deadline with a whole-cache fallback)*:
+  - per-layer deadlines: NHD flowlines 25 s, NHD waterbodies and NWI 15 s;
+  - NHD hedged requests: an identical request at 4 s and at 10 s if none has answered (at most 3 per layer; the first answer wins and the others are aborted), plus an immediate retry on HTTP 5xx/429, non-JSON bodies, network errors and ArcGIS errors with code 5xx or none. NWI is never hedged;
+  - `maxAllowableOffset=0.00001` on both NHD layers (about 1 m; NWI keeps 0.00002);
+  - per-layer cache fill: when the field lies inside the committed demo cache, only the failed layers are filled from it, and only when the meta `featureCounts` for that layer match. The result is 'partial' (some live) or 'cached' (all cached), every feature carries `provenance` live/cached, and the UI and record name each layer's source and date. Otherwise the loaded layers are kept and the status is 'unavailable'.
+  - Don't send credentials, and skip NHD layer 9.
 - **Disclosures,** shown in the "mapped (incomplete)" note: NHD was retired in Oct 2023 (still served, no longer maintained); NWI imagery at the El Campo test area dates from **1992**; **NWI excludes farmed wetlands**. This is why the observed-water step matters.
 - **Credits:** "U.S. Geological Survey" and "U.S. Fish and Wildlife Service, National Wetlands Inventory".
 
@@ -238,6 +243,7 @@ Fallback: if the live API fails during the demo, use **Replay**, with the badge 
 **Answer key.**
 - Source: research `labels/answer_key.json`, with 129 quotes, all verified under pdf.js with whitespace ignored.
 - Before the eval, **add `method` and `crop`** to each entry. 57 of the 129 have no numeric value, and some sentences repeat across methods.
+- *(Done 04:05, Leg I.)* `eval/answer-key.json` now holds 157 quotes: the 6 bundled labels have 129 annotated quotes (101 original + 28 added, each marked `added`) with `kind`, `method` and the fields that apply; the other 4 sources keep 28 unannotated quotes and are not scored. See `eval/ANNOTATION.md`.
 - `pdf_page` is the 1-based PDF index; PPLS PDFs start with 1–2 EPA cover-letter pages.
 
 **Quote verification.**
@@ -286,3 +292,48 @@ Fallback: if the live API fails during the demo, use **Replay**, with the badge 
 - **Judge line:** "Label tools tell you what the label says; LabelLine shows *where* — every no-spray strip on your field, drawn from a sentence it highlights on the page."
 
 **Problem evidence.** The Texas Observer (2017-04-17) reported that TDA received about 900 drift reports statewide in 2013–2016, 169 of them alleging involuntary exposure.
+
+**Implementation decisions (added 2026-10-11 03:40 UTC+8 from the build report, commits eccbae8..b8eac0f). These record what the code does; they override section 5 where they differ.**
+
+- **Buffer rule.** `selectWaterBuffer` (`src/geo/buffers.ts`) draws the **largest** distance among confirmed, page-verified `water_buffer` clauses whose method is the selected method **or** `any`. This replaces section 5's "exact method, else any".
+  - A crop-limited clause counts only when the selected crop matches (case-insensitive, whole word). With no crop selected it is skipped and reported, not applied.
+  - A confirmed, verified clause that prohibits the method for the crop wins: no buffer, a prohibited flag, and `distanceFt` 0.
+  - `summariseClauses` in `src/checklist/machine.ts` mirrors the rule, and a cross-check test over 6 methods × 5 crop values pins the two together.
+  - Reason: the conservative choice, so a larger "any" distance is never hidden. The README states it for judges.
+- **API handlers are Web-standard.** Each `api/*.ts` exports `export async function POST(request: Request): Promise<Response>`; a default function or `default { fetch }` also works.
+  - `server/devApi.ts` mounts them under Vite at `/api/<name>`. It copies `.env` into `process.env` on the server only, answers 404 for an unknown route and 405 with Allow for a wrong method, and caps the body at 4.5 MB (413).
+  - Server imports use `.js` specifiers (`../server/extract.js`), because `package.json` has `"type": "module"`.
+  - Not yet run on Vercel. *(Updated 04:10: `vercel.json` now exists and the time budget is settled; see "Merge decisions" below.)*
+- **Store defaults** (`initialAppState()` in `src/store.ts`):
+  - `method: 'aerial'`, to match demo step 2.
+  - `crop: null`, so crop-limited clauses are shown, not silently applied.
+  - `mode: 'live'` with `extractMeta: null`. The header reads "No extraction yet" until an extraction exists and only then shows LIVE or REPLAY.
+  - `waterStatus` starts as `idle` and moves through `loading`, `live`, `cached` or `unavailable`, so a failed fetch is never read as "no water".
+  - `checklist: initialChecklist()`; `emptyChecklist()` is still exported.
+  - UI-only state (extraction phase, buffers and acreage, the linked clause, toasts) lives in `src/ui/viewState.ts`.
+- **Gemini input is the PDF only.** The server never sends the file name, field or grower data. The client refuses PDFs over 3,300,000 bytes (`MAX_PDF_BYTES` in `server/schema.ts`) before upload.
+- **Verified quotes.** A verified quote is replaced by the full sentence from the PDF, and its `page` becomes the page where it was found. The model's anchor and cited page are kept as `anchor` and `claimedPage`. A fuzzy match (`exact: false`) is shown as "Approximate match", and `match: null` is shown in red as "Not found in PDF — cannot draw" and never drawn.
+- **Replay files** (`public/demo/extractions/<slug>.json`) must contain `recordedAt`, or loading fails; the client always forces `mode: 'replay'`.
+- **Water cache fallback is decided by geometry.** It is used only when the field plus its buffer fits inside the cached query area, which covers buffers up to 450 ft. Any other field gets "unavailable" with the note "Mapped layers unavailable — add observed water". *(Updated 04:10: the cache now fills only the failed layers; see the Water "Timeout" bullets above.)*
+- **Wind and checklist.**
+  - Gusts are screened against the label's maximum sustained speed (`screenWind`'s gust limit defaults to it), and each hour reports the sustained and gust results separately.
+  - An on-site wind value above the confirmed limit is recorded with a flag, not blocked; status can be `complete` with flags.
+  - A bulletin month that differs from the application month is flagged, not blocking.
+- **Record footer** is the section 5 text exactly: "Screening record — not a legal determination; the label and the applicator's judgment govern."
+- **Screenshots.** `hackathon/screens/` is gitignored. Frames named `*-fixture-*` were made with devtools-injected answer-key clauses (DEV FIXTURE banner), not Gemini output, and must not be used in the submission or video.
+
+**Merge decisions (added 2026-10-11 04:10 UTC+8, commits da1d55f..6b3d466, Legs G/H/I/J). These record what the code does; they override earlier sections where they differ.**
+
+- **Deploy timing.** `server/extract.ts`: `CALL_TIMEOUT_MS` 25,000 per Gemini call, `DEFAULT_BUDGET_MS` 55,000 in total (each call gets `min(25 s, time left)`). `vercel.json`: framework `vite`, `npm run build`, output `dist`, `functions["api/extract.ts"].maxDuration` 60. A test pins `2 × CALL_TIMEOUT_MS ≤ budget` and `budget + 5 s ≤ maxDuration`, so the constants and `vercel.json` change together. Vercel Hobby with Fluid compute allows up to 300 s if the first live run needs more.
+- **`.vercelignore`** excludes `.env`, `.env.*` (except `.env.example`) and `hackathon/screens/`. Vercel's default CLI ignore list does not cover `.env`. `eval/` is not ignored, because the Evidence tab bundles `eval/results.json` at build time.
+- **First load.** `build.sourcemap` is `false`. `src/pdf/pdfjs.ts` and `src/pdf/viewer.ts` load with `import()` when a label is chosen (or the label controls are touched), so the first load is the index chunk only.
+- **pdf.js resources.** `vite.config.ts` (`pdfjsAssets`) serves `node_modules/pdfjs-dist/{standard_fonts,cmaps,wasm,iccs}` at `<base>pdfjs/<dir>/` in dev and copies them to `dist/pdfjs/` at build (198 files, about 3.3 MB, fetched only when a PDF needs them). `getDocument` gets absolute `standardFontDataUrl`, `cMapUrl` (+ `cMapPacked`), `wasmUrl` and `iccUrl`. Without the CMaps, CID-font text is missing from the text layer and quote verification fails.
+- **Label change resets the label-scoped checklist items** (`blt_checked`, `onsite_wind`, `mitigation_credits`) and their drafts. `field_walked` stays because the field stays; `clauses_confirmed` re-derives from the new clause list.
+- **Water UI.** `WaterStatus.detailedStatus` carries 'live' | 'partial' | 'cached' | 'unavailable'. The chip reads "Mapped water: partly live (cached <date>)" for 'partial' (kept short: the chip is capped at 48% of the map header; the layer counts are in its title); the notes give one line per layer (live / cached with the failed live request / failed) and a "Retry live" button; the record lists live and saved-copy layers separately; map tooltips name cached features.
+- **Headless browser checks need a normal Chrome user agent.** The NWI server answers a `HeadlessChrome` UA with an HTML 500 and no CORS header (Chrome: `MissingAllowOriginHeader`), and a normal Chrome UA with 200 + CORS (checked with curl, same body, 04:10). Any headless driver or screen capture must pass `--user-agent=` with a normal Chrome string, or NWI shows as cached/failed.
+- **Readout** names the rule: "<d> ft buffer … from clause <id> (p. <n>): the largest confirmed water buffer for <method> or any method[, on <crop>]".
+- **Eval scoring** (`eval/score.ts`, written into `results.json` as `scoring`): one-to-one maximum matching on kind, method (or the key's `acceptMethods`), compatible crops, equal numbers, prohibition only by prohibition, page within ±1.
+  - Recall denominators (groups with a distance or wind number): Brigade 12, Warrior 10, Mustang 9, Asana 9, UP-Cyde 7, Baythroid 8 = 55; plus 3 keyed crop prohibitions (Brigade corn p10, Warrior II rice p28, Mustang Maxx rice p31).
+  - Precision is stricter than section 5's wording: a verified clause that contradicts the key item for the same sentence (kind or number) counts as wrong. `keyMatchedPrecision` (key matches only) is reported too.
+  - Labels without data are listed in `skipped`, never scored as zero; `results.json` is written only when at least one label was scored.
+- **Replay recordings** (`npm run record`, `scripts/record-replay.ts`): the unmodified 200 body plus `mode: "replay"`, `recordedAt`, `sourceRun` and `pdfSha256`; the eval rejects a recording whose `pdfSha256` does not match the bundled PDF. The recorder and the eval default to `http://localhost:5180/`, so run `npm run dev -- --port 5180` (or pass `--base`).

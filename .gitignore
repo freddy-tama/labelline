@@ -5,3 +5,7 @@ dist
 .vercel
 coverage
 *.log
+
+# Local screenshots from UI test runs. Some frames show devtools-injected test clauses
+# (DEV FIXTURE), not Gemini output, so this folder is never committed.
+hackathon/screens/
