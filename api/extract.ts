@@ -65,7 +65,7 @@ export async function POST(request: Request): Promise<Response> {
   const apiKey = process.env.GEMINI_API_KEY ?? '';
   if (!apiKey) {
     return json(503, {
-      error: 'Live extraction is not configured on this server (GEMINI_API_KEY is missing). Recorded replays still work.',
+      error: 'Live extraction is not configured on this server (GEMINI_API_KEY is missing).',
     });
   }
 
