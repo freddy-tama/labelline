@@ -56,7 +56,8 @@ const SOURCE_LABEL: Record<WaterSource, string> = {
   observed: 'Observed water (drawn by you)',
 };
 
-const FIELD_STYLE: L.PathOptions = { color: MAP_COLORS.field, weight: 2.5, opacity: 1, fillColor: MAP_COLORS.field, fillOpacity: 0.06 };
+// dashArray '' clears the prohibited style's dashes: Leaflet setStyle merges options, so a missing key keeps the old value.
+const FIELD_STYLE: L.PathOptions = { color: MAP_COLORS.field, weight: 2.5, opacity: 1, fillColor: MAP_COLORS.field, fillOpacity: 0.06, dashArray: '' };
 const PROHIBITED_FIELD_STYLE: L.PathOptions = {
   color: MAP_COLORS.prohibited,
   weight: 3,
