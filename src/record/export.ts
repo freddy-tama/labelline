@@ -548,13 +548,23 @@ function restrictionsSection(input: RecordInput): string {
 
 function waterSection(input: RecordInput): string {
   const status = input.waterStatus;
+  const partial = status.state === 'cached' && status.detailedStatus === 'partial';
+  const reports = status.sources ?? [];
   let line: string;
   switch (status.state) {
     case 'live':
       line = `Mapped water fetched live from USGS NHD and USFWS NWI${status.retrievedAt ? ` (${esc(formatChicago(status.retrievedAt))})` : ''}.`;
       break;
     case 'cached':
-      line = `<span class="tag">cached</span> Mapped water from a saved copy (retrieved ${esc(formatChicago(status.retrievedAt))}), not a live query.`;
+      if (partial) {
+        const live = reports.filter((s) => s.state === 'live');
+        const cached = reports.filter((s) => s.state === 'cached');
+        line =
+          `<span class="tag">partly live</span> Fetched live: ${live.map((s) => `${esc(s.label)} (${esc(formatChicago(s.retrievedAt))})`).join('; ') || '—'}. ` +
+          `From a saved copy (retrieved ${esc(formatChicago(status.retrievedAt))}), not a live query: ${cached.map((s) => `${esc(s.label)} (live request failed: ${esc(s.error ?? 'error')})`).join('; ') || '—'}.`;
+      } else {
+        line = `<span class="tag">cached</span> Mapped water from a saved copy (retrieved ${esc(formatChicago(status.retrievedAt))}), not a live query.`;
+      }
       break;
     case 'unavailable':
       line = 'Mapped layers unavailable — add observed water.';
@@ -569,6 +579,12 @@ function waterSection(input: RecordInput): string {
 
   const count = (source: WaterSource): number =>
     (input.mappedWater?.features ?? []).filter((f) => f.properties?.source === source).length;
+  // In a partly live result, say per layer whether its count is live or from the saved copy.
+  const cell = (source: Exclude<WaterSource, 'observed'>): string => {
+    if (!input.mappedWater) return '—';
+    const state = partial ? reports.find((s) => s.id === source)?.state : undefined;
+    return `${count(source)}${state === 'live' || state === 'cached' ? ` <span class="small">(${state})</span>` : ''}`;
+  };
   const observed = input.observedWater.features.length;
 
   return `<section class="record-section">
@@ -576,9 +592,9 @@ function waterSection(input: RecordInput): string {
   <p>${line}</p>
   <table class="compact">
     <tbody>
-      <tr><th>NHD flowlines (mapped)</th><td>${input.mappedWater ? count('nhd_flowline') : '—'}</td></tr>
-      <tr><th>NHD waterbodies (mapped)</th><td>${input.mappedWater ? count('nhd_waterbody') : '—'}</td></tr>
-      <tr><th>NWI wetlands (mapped)</th><td>${input.mappedWater ? count('nwi_wetland') : '—'}</td></tr>
+      <tr><th>NHD flowlines (mapped)</th><td>${cell('nhd_flowline')}</td></tr>
+      <tr><th>NHD waterbodies (mapped)</th><td>${cell('nhd_waterbody')}</td></tr>
+      <tr><th>NWI wetlands (mapped)</th><td>${cell('nwi_wetland')}</td></tr>
       <tr><th>Observed water (added by applicator)</th><td>${observed}</td></tr>
     </tbody>
   </table>

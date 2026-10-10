@@ -3,14 +3,27 @@
 // disclosures, and the observed-water shortcuts. All numbers come from geo/area on the drawn geometry.
 
 import type { AppState } from '../store';
-import { scopeLabel } from '../checklist/machine';
-import { WATER_CREDITS } from '../map/water';
+import type { Method } from '../types';
+import { METHOD_LABELS, scopeLabel } from '../checklist/machine';
+import { WATER_CREDITS, type LayerFetchReport } from '../map/water';
 import { append, fmtAcres, fmtChicagoDate, h, icon, plural } from './dom';
 import { pageRef, prohibitionText } from './restrictionsPanel';
 import type { ViewState } from './viewState';
 
 export interface FieldHandlers {
   onAddObserved(kind: 'area' | 'line' | 'point'): void;
+}
+
+export interface WaterNotesHandlers {
+  /** Queries the mapped-water services again for the current field. */
+  onRetry?(): void;
+}
+
+/** The buffer rule in words (geo/buffers selectWaterBuffer): largest confirmed clause for the method or "any". */
+export function bufferRuleText(method: Method, crop: string | null): string {
+  const methods = method === 'any' ? 'any method' : `${METHOD_LABELS[method]} or any method`;
+  const c = crop?.trim();
+  return `the largest confirmed water buffer for ${methods}${c ? `, on ${c}` : ''}`;
 }
 
 function stat(label: string, value: string, unit: string, extra = ''): HTMLElement {
@@ -52,7 +65,7 @@ export function renderReadout(container: HTMLElement, state: Readonly<AppState>,
       'p',
       { class: 'readout-line' },
       h('strong', {}, `${buffers.distanceFt} ft`),
-      ` buffer for ${scope} from clause ${buffers.restrictionId}${clause ? ` (${pageRef(clause)})` : ''}, around ${plural(buffers.bufferedFeatureCount, 'water feature')} near the field.`,
+      ` buffer around ${plural(buffers.bufferedFeatureCount, 'water feature')} near the field, from clause ${buffers.restrictionId}${clause ? ` (${pageRef(clause)})` : ''}: ${bufferRuleText(state.method, state.crop)}.`,
     );
   } else {
     const pending = state.restrictions.some((r) => r.kind === 'water_buffer' && r.match && r.status === 'pending' && (r.method === state.method || r.method === 'any'));
@@ -95,12 +108,22 @@ const STATUS_TEXT: Record<AppState['waterStatus']['state'], [long: string, short
 export function renderWaterChip(chip: HTMLButtonElement, state: Readonly<AppState>): void {
   const ws = state.waterStatus;
   const count = state.mappedWater?.features.length ?? 0;
+  const partial = ws.state === 'cached' && ws.detailedStatus === 'partial';
   let [long, short] = STATUS_TEXT[ws.state];
+  let detail = '';
   if (ws.state === 'live') {
     long += ` · ${plural(count, 'feature')}`;
     short += ` · ${count}`;
   }
-  if (ws.state === 'cached') {
+  if (partial) {
+    // Kept as short as the 'cached' text (the chip is capped at 48% of the map header); the counts go in the title.
+    const sources = ws.sources ?? [];
+    const live = sources.filter((s) => s.state === 'live').length;
+    const cached = sources.filter((s) => s.state === 'cached').length;
+    long = `Mapped water: partly live (cached ${fmtChicagoDate(ws.retrievedAt)})`;
+    short = 'Water: partial';
+    detail = ` ${live} of ${sources.length} layers live, ${plural(cached, 'layer')} from the cached copy.`;
+  } else if (ws.state === 'cached') {
     long += ` (retrieved ${fmtChicagoDate(ws.retrievedAt)})`;
     short += ` ${fmtChicagoDate(ws.retrievedAt)}`;
   }
@@ -109,11 +132,29 @@ export function renderWaterChip(chip: HTMLButtonElement, state: Readonly<AppStat
     h('span', { class: 'chip-long' }, long),
     h('span', { class: 'chip-short', 'aria-hidden': 'true' }, short),
   );
-  chip.title = `${long}. Show sources and limits of the mapped water.`;
-  chip.className = `chip chip-water water-${ws.state}`;
+  chip.title = `${long}.${detail} Show sources and limits of the mapped water.`;
+  chip.className = `chip chip-water water-${partial ? 'partial' : ws.state}`;
 }
 
-export function renderWaterNotes(container: HTMLElement, state: Readonly<AppState>): void {
+/** One line per mapped layer: live, cached copy (with why the live request failed), or failed. */
+export function sourceLine(s: Readonly<LayerFetchReport>): { tone: 'ok' | 'warn' | 'danger'; text: string } {
+  const tries = s.attempts > 1 ? ` · ${s.attempts} requests` : '';
+  switch (s.state) {
+    case 'live':
+      return { tone: 'ok', text: `${s.label}: ${plural(s.featureCount, 'feature')} (live${tries})` };
+    case 'cached':
+      return {
+        tone: 'warn',
+        text: `${s.label}: ${plural(s.featureCount, 'feature')} (cached, retrieved ${fmtChicagoDate(s.retrievedAt)}); live request failed: ${s.error ?? 'error'}${tries}`,
+      };
+    default:
+      return { tone: 'danger', text: `${s.label}: failed — ${s.error ?? 'error'}${tries}` };
+  }
+}
+
+const SOURCE_ICON = { ok: 'check', warn: 'clock', danger: 'x' } as const;
+
+export function renderWaterNotes(container: HTMLElement, state: Readonly<AppState>, handlers: WaterNotesHandlers = {}): void {
   const ws = state.waterStatus;
   const notes = ws.notes ?? [];
   const sources = ws.sources ?? [];
@@ -123,6 +164,7 @@ export function renderWaterNotes(container: HTMLElement, state: Readonly<AppStat
   if (items.length === 0) {
     items.push(h('li', {}, 'Mapped water is incomplete: USGS NHD (retired October 2023, still served) and USFWS NWI (excludes farmed wetlands). Add the water you see on site as observed water.'));
   }
+  const canRetry = !!handlers.onRetry && !!state.field && (ws.state === 'cached' || ws.state === 'unavailable');
   container.replaceChildren();
   append(
     container,
@@ -131,14 +173,18 @@ export function renderWaterNotes(container: HTMLElement, state: Readonly<AppStat
       ? h(
           'ul',
           { class: 'sources' },
-          ...sources.map((s) =>
-            h(
-              'li',
-              { class: s.ok ? 'tone-ok' : 'tone-danger' },
-              icon(s.ok ? 'check' : 'x', 12),
-              `${s.label}: ${s.ok ? `${plural(s.featureCount, 'feature')} (live)` : `failed — ${s.error ?? 'error'}`}`,
-            ),
-          ),
+          ...sources.map((s) => {
+            const line = sourceLine(s);
+            return h('li', { class: `tone-${line.tone}` }, icon(SOURCE_ICON[line.tone], 12), line.text);
+          }),
+        )
+      : null,
+    canRetry
+      ? h(
+          'button',
+          { type: 'button', class: 'btn btn-xs water-retry', onclick: () => handlers.onRetry?.() },
+          icon('retry', 14),
+          'Retry live',
         )
       : null,
     h('p', { class: 'fine' }, WATER_CREDITS, '.'),

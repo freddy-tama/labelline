@@ -1,5 +1,5 @@
 {
-  "description": "Cached USGS NHD + USFWS NWI response for the LabelLine sample field (illustrative), Wharton County, TX. Produced by src/map/water.ts fetchMappedWater() making real requests; used only when the live request for the sample field fails, and labelled \"cached\" with this retrieval date. Each feature is unmodified service geometry plus properties.source/name/type/code.",
+  "description": "Cached USGS NHD + USFWS NWI response for the LabelLine sample field (illustrative), Wharton County, TX. Produced by src/map/water.ts fetchMappedWater() making real requests; used per layer, only for a layer whose live request for the sample field fails (the layers that load live are kept), and labelled \"cached\" with this retrieval date. A layer is used only when its feature count matches featureCounts below. Each feature is unmodified service geometry (NHD without maxAllowableOffset; NWI at 0.00002) plus properties.source/name/type/code.",
   "retrievedAt": "2026-10-10T18:27:33.171Z",
   "query": {
     "field": {

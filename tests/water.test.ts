@@ -158,7 +158,8 @@ describe('fetchMappedWater: live', () => {
     expect(byLayer.flow.get('where')).toBe('ftype NOT IN (420,428)');
     expect(byLayer.flow.get('outFields')).toBe('OBJECTID,gnis_name,ftype,fcode');
     expect(byLayer.flow.get('resultRecordCount')).toBe('2000');
-    expect(byLayer.flow.has('maxAllowableOffset')).toBe(false);
+    expect(byLayer.flow.get('maxAllowableOffset')).toBe('0.00001');
+    expect(byLayer.body.get('maxAllowableOffset')).toBe('0.00001');
     expect(byLayer.body.get('outFields')).toBe('OBJECTID,GNIS_NAME,FTYPE,FCODE,AREASQKM');
     expect(byLayer.nwi.get('outFields')).toBe('OBJECTID,ATTRIBUTE,WETLAND_TYPE,ACRES');
     expect(byLayer.nwi.get('maxAllowableOffset')).toBe('0.00002');
@@ -198,7 +199,8 @@ describe('fetchMappedWater: failures are never "no water"', () => {
     const result = await fetchMappedWater(otherField, 150, { fetchImpl: impl });
 
     expect(result.status).toBe('unavailable');
-    expect(result.retrievedAt).toBeNull();
+    expect(result.detailedStatus).toBe('unavailable');
+    expect(result.retrievedAt).toBeUndefined(); // never null: it goes straight into the store
     const body = result.sources.find((s) => s.id === 'nhd_waterbody')!;
     expect(body.ok).toBe(false);
     expect(body.error).toMatch(/service error \(400 Failed to execute query\.\)/);
@@ -209,14 +211,27 @@ describe('fetchMappedWater: failures are never "no water"', () => {
     expect(result.fc.features.map((f) => f.properties.source)).toEqual(['nhd_flowline', 'nhd_flowline', 'nwi_wetland']);
   });
 
-  it('falls back to the dated cache for the demo field', async () => {
+  it('fills only the failed layer from the dated cache for the demo field (partial)', async () => {
     const { impl, calls } = mockFetch({ body: arcgisError });
     const result = await fetchMappedWater(sampleField, 150, { fetchImpl: impl });
 
-    expect(result.status).toBe('cached');
+    expect(result.status).toBe('cached'); // coarse status for the store: part of the data is not live
+    expect(result.detailedStatus).toBe('partial');
     expect(result.retrievedAt).toBe(cachedMeta.retrievedAt);
-    expect(result.fc.features).toHaveLength(cachedFc.features.length);
-    expect(result.fc.features.every((f) => ['nhd_flowline', 'nhd_waterbody', 'nwi_wetland'].includes(f.properties.source))).toBe(true);
+    const cachedBodies = cachedFc.features.filter((f) => f.properties?.source === 'nhd_waterbody').length;
+    // 2 live flowlines + the cached waterbodies + 1 live wetland; the cached copies of the live layers are not used.
+    expect(result.fc.features).toHaveLength(2 + cachedBodies + 1);
+    expect(result.fc.features.map((f) => [f.properties.source, f.properties.provenance])).toEqual([
+      ['nhd_flowline', 'live'],
+      ['nhd_flowline', 'live'],
+      ...Array.from({ length: cachedBodies }, () => ['nhd_waterbody', 'cached']),
+      ['nwi_wetland', 'live'],
+    ]);
+    expect(result.sources.map((s) => [s.id, s.state, s.ok])).toEqual([
+      ['nhd_flowline', 'live', true],
+      ['nhd_waterbody', 'cached', false],
+      ['nwi_wetland', 'live', true],
+    ]);
     expect(result.notes.join(' ')).toContain(`cached sample data (retrieved ${cachedMeta.retrievedAt.slice(0, 10)})`);
     expect(calls.map((c) => c.layer).sort()).toEqual(['body', 'cache', 'flow', 'meta', 'nwi']);
   });
@@ -232,14 +247,15 @@ describe('fetchMappedWater: failures are never "no water"', () => {
     const { impl } = mockFetch({ flow: neverResolves });
     const result = await fetchMappedWater(sampleField, 150, { fetchImpl: impl, timeoutMs: 30 });
     expect(result.status).toBe('cached');
-    expect(result.sources.find((s) => s.id === 'nhd_flowline')!.error).toBe('timed out');
+    expect(result.detailedStatus).toBe('partial');
+    expect(result.sources.find((s) => s.id === 'nhd_flowline')!.error).toBe('timed out after 30 ms');
   });
 
   it('times out to "unavailable" for any other field', async () => {
     const { impl } = mockFetch({ nwi: neverResolves });
     const result = await fetchMappedWater(otherField, 150, { fetchImpl: impl, timeoutMs: 30 });
     expect(result.status).toBe('unavailable');
-    expect(result.sources.find((s) => s.id === 'nwi_wetland')!.error).toBe('timed out');
+    expect(result.sources.find((s) => s.id === 'nwi_wetland')!.error).toBe('timed out after 30 ms');
   });
 
   it('rejects non-JSON bodies, HTTP errors, non-GeoJSON bodies and empty "more records" pages', async () => {

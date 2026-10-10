@@ -946,13 +946,15 @@ a {
   background: var(--water);
 }
 
-.water-cached {
+.water-cached,
+.water-partial {
   background: var(--warn-soft);
   border-color: #e7c27a;
   color: var(--warn-ink);
 }
 
-.water-cached .chip-dot {
+.water-cached .chip-dot,
+.water-partial .chip-dot {
   background: var(--warn);
 }
 
@@ -1154,8 +1156,21 @@ a {
 
 .sources li {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
+}
+
+.sources li + li {
+  margin-top: 4px;
+}
+
+.sources li svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.water-retry {
+  margin-bottom: var(--space-3);
 }
 
 /* Leaflet: match the app's type and keep its controls calm */

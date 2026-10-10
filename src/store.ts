@@ -12,7 +12,7 @@ import type {
   WindScreen,
 } from './types';
 import { initialChecklist } from './checklist/machine';
-import type { LayerFetchReport } from './map/water';
+import type { LayerFetchReport, MappedWaterDetailedStatus } from './map/water';
 
 export type Listener<T> = (state: Readonly<T>, prev: Readonly<T>, changed: ReadonlyArray<keyof T>) => void;
 export type Patch<T> = Partial<T> | ((state: Readonly<T>) => Partial<T>);
@@ -65,15 +65,18 @@ export type WaterCollection = GeoJSON.FeatureCollection<GeoJSON.Geometry, { sour
 /**
  * Mapped-water fetch status. A failure is never "no water":
  * - live: fetched from NHD/NWI just now
- * - cached: committed demo GeoJSON, shown with its retrieval date
+ * - cached: committed demo GeoJSON, shown with its retrieval date (also used for a 'partial' result,
+ *   where some layers are live and the failed ones come from the cache; see detailedStatus)
  * - unavailable: fetch failed and no cache applies; the UI asks for observed water
  */
 export interface WaterStatus {
   state: 'idle' | 'loading' | 'live' | 'cached' | 'unavailable';
+  /** Exact result from map/water: 'partial' = some layers live, the failed ones from the dated cache. */
+  detailedStatus?: MappedWaterDetailedStatus;
   retrievedAt?: string;
   message?: string;
   notes?: string[]; // disclosures and failed-layer notes from map/water fetchMappedWater()
-  sources?: LayerFetchReport[]; // per-layer fetch report (ok, featureCount, pages, error)
+  sources?: LayerFetchReport[]; // per-layer fetch report (state live/cached/failed, featureCount, error, timing)
 }
 
 export interface WindState {

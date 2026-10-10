@@ -375,15 +375,26 @@ async function refreshWater(): Promise<void> {
     if (ctrl.signal.aborted) return;
     store.set({
       mappedWater: res.fc as WaterCollection,
-      waterStatus: { state: res.status, retrievedAt: res.retrievedAt ?? undefined, notes: res.notes, sources: res.sources },
+      waterStatus: { state: res.status, detailedStatus: res.detailedStatus, retrievedAt: res.retrievedAt, notes: res.notes, sources: res.sources },
     });
   } catch (error) {
     if (ctrl.signal.aborted) return;
     store.set({
       mappedWater: null,
-      waterStatus: { state: 'unavailable', message: `Mapped water request failed: ${errorText(error)}`, notes: ['Mapped layers unavailable — add observed water.', ...MAPPED_WATER_DISCLOSURES] },
+      waterStatus: {
+        state: 'unavailable',
+        detailedStatus: 'unavailable',
+        message: `Mapped water request failed: ${errorText(error)}`,
+        notes: ['Mapped layers unavailable — add observed water.', ...MAPPED_WATER_DISCLOSURES],
+      },
     });
   }
+}
+
+/** "Retry live" in the water notes: queries the services again for the current field. */
+function retryWater(): void {
+  if (!store.get().field || store.get().waterStatus.state === 'loading') return;
+  void refreshWater();
 }
 
 // Object identity ids, so the expensive buffer union only reruns when its inputs really change.
@@ -531,7 +542,7 @@ function flushRender(): void {
   if (parts.has('readout')) renderReadout(byId('readout'), s, v, { onAddObserved: startObservedDraw });
   if (parts.has('water')) {
     renderWaterChip(byId<HTMLButtonElement>('water-chip'), s);
-    renderWaterNotes(byId('water-notes-body'), s);
+    renderWaterNotes(byId('water-notes-body'), s, { onRetry: retryWater });
   }
   if (parts.has('wind')) renderWind(byId('wind-strip'), s, { onRetry: () => void refreshWind(true) });
   if (parts.has('checklist')) {

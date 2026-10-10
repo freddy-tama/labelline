@@ -188,7 +188,17 @@ function bindWaterTooltip(feature: GeoJSON.Feature, layer: L.Layer): void {
   const title = name ?? type ?? 'Water feature';
   const sub = source ? SOURCE_LABEL[source] : 'Water';
   const detail = name && type ? ` · ${type}` : '';
-  layer.bindTooltip(`<strong>${escapeHtml(title)}</strong>${escapeHtml(detail)}<br>${escapeHtml(sub)}`, { sticky: true });
+  // Features filled from the dated demo cache (map/water provenance) say so, so a partly live map is never read as all live.
+  const cached = props.provenance === 'cached' ? `<br>Cached sample data, retrieved ${escapeHtml(cachedDate(props.retrievedAt))}` : '';
+  layer.bindTooltip(`<strong>${escapeHtml(title)}</strong>${escapeHtml(detail)}<br>${escapeHtml(sub)}${cached}`, { sticky: true });
+}
+
+const cachedDateFormat = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', year: 'numeric' });
+
+function cachedDate(value: unknown): string {
+  if (typeof value !== 'string') return 'date unknown';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : cachedDateFormat.format(date);
 }
 
 function renderField(s: MapState): void {
