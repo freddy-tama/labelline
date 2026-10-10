@@ -8,6 +8,7 @@
     <title>LabelLine</title>
   </head>
   <body>
+    <a class="skip-link" href="#restrictions-region">Skip to restrictions</a>
     <div class="app">
       <header class="app-header">
         <div class="brand">
@@ -15,73 +16,102 @@
           <span class="brand-name">LabelLine</span>
         </div>
 
-        <div class="slot slot-product" data-slot="product">
+        <div class="slot slot-product">
           <span class="slot-label">Label</span>
-          <span class="slot-value" id="product-value">No label loaded</span>
+          <span class="slot-value product-line">
+            <span class="product-name is-empty" id="product-value">No label loaded</span>
+            <span class="regno" id="regno-value" hidden></span>
+          </span>
         </div>
 
-        <div class="slot" data-slot="method" id="slot-method">
-          <span class="slot-label">Method</span>
-          <span class="slot-value" id="method-value"></span>
+        <div class="slot seg-group" role="radiogroup" aria-labelledby="method-label">
+          <span class="slot-label" id="method-label">Application method</span>
+          <div class="seg" id="method-options"></div>
         </div>
 
-        <div class="slot" data-slot="crop" id="slot-crop">
+        <label class="slot slot-crop">
           <span class="slot-label">Crop</span>
-          <span class="slot-value" id="crop-value"></span>
-        </div>
+          <select class="select select-sm" id="crop-select"></select>
+        </label>
 
         <div class="header-end">
-          <div class="slot" data-slot="mode" id="slot-mode">
-            <span class="badge badge-neutral" id="mode-badge">No extraction yet</span>
-          </div>
-          <div class="slot" data-slot="status" id="slot-status">
-            <span class="badge badge-status" id="status-badge" role="status">Screening incomplete</span>
-          </div>
+          <span class="badge badge-neutral" id="mode-badge">No extraction yet</span>
+          <span class="badge badge-status" id="status-badge" role="status">Screening incomplete</span>
+          <button class="btn btn-primary btn-sm" type="button" id="export-btn" title="Open a printable screening record in a new window" disabled>Export record</button>
         </div>
       </header>
 
       <main class="panels">
-        <section class="panel panel-pdf" aria-labelledby="pdf-heading">
+        <section class="panel panel-pdf" aria-labelledby="pdf-heading" id="pdf-panel">
           <div class="panel-head">
             <h2 id="pdf-heading">Label</h2>
+            <select class="select select-sm sample-select" id="sample-select" aria-label="Sample label">
+              <option value="">Choose a sample label…</option>
+            </select>
+            <label class="btn btn-secondary btn-sm file-btn">
+              <svg class="icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 16v4h16v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Upload PDF</span>
+              <input class="sr-only" type="file" id="file-input" accept="application/pdf,.pdf" />
+            </label>
           </div>
-          <div class="panel-body" id="pdf-host">
-            <p class="placeholder">Label pages and their highlighted sentences will appear here.</p>
+          <div class="pdf-host" id="pdf-host">
+            <div class="pdf-empty" id="pdf-empty">
+              <div class="drop-card">
+                <svg class="icon" viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><path d="M7 3h7l5 5v13H7zM14 3v5h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                <p class="drop-title">Start with the label</p>
+                <p class="drop-text">Choose a sample label above (real archived EPA labels), upload one, or drop a label PDF here. Live extraction takes text PDFs up to 3.3 MB.</p>
+                <p class="drop-text drop-fine">Each sentence LabelLine draws from is highlighted on its page.</p>
+              </div>
+            </div>
           </div>
         </section>
 
         <section class="panel panel-map" aria-labelledby="map-heading">
           <div class="panel-head">
             <h2 id="map-heading">Field</h2>
+            <button class="btn btn-secondary btn-sm" type="button" id="sample-field-btn" title="Illustrative field next to the Tres Palacios River, Wharton County, TX">Load sample field</button>
+            <button class="btn btn-quiet btn-sm" type="button" id="draw-field-btn">Draw field</button>
+            <button class="chip chip-water water-idle" type="button" id="water-chip" aria-controls="water-notes" aria-expanded="false">Mapped water: no field yet</button>
           </div>
-          <div class="map-host" id="map">
-            <p class="placeholder">The aerial map, mapped and observed water, and buffers will appear here.</p>
+          <div class="readout" id="readout" aria-live="polite"></div>
+          <div class="map-wrap">
+            <div class="map-host" id="map"></div>
+            <div class="map-hint" id="map-hint">
+              <strong>Start here:</strong> load the sample field, or choose <em>Draw field</em> and click its corners on the map. Click the first corner again to finish.
+            </div>
+          </div>
+          <div class="water-notes" id="water-notes" hidden>
+            <div class="water-notes-head">
+              <h3>Mapped water (incomplete)</h3>
+              <button class="icon-btn" type="button" id="water-notes-close" aria-label="Close mapped water notes">
+                <svg class="icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+            <div id="water-notes-body"></div>
           </div>
         </section>
 
-        <aside class="panel panel-side" aria-label="Screening">
+        <aside class="panel panel-side" aria-label="Screening" id="restrictions-region" tabindex="-1">
           <div class="tabs" role="tablist" aria-label="Screening views">
-            <button class="tab" type="button" role="tab" id="tab-restrictions" aria-controls="tabpanel-restrictions" aria-selected="true">Restrictions</button>
-            <button class="tab" type="button" role="tab" id="tab-checklist" aria-controls="tabpanel-checklist" aria-selected="false" tabindex="-1">Checklist</button>
+            <button class="tab" type="button" role="tab" id="tab-restrictions" aria-controls="tabpanel-restrictions" aria-selected="true">Restrictions <span class="tab-count" id="tab-count-restrictions"></span></button>
+            <button class="tab" type="button" role="tab" id="tab-checklist" aria-controls="tabpanel-checklist" aria-selected="false" tabindex="-1">Checklist <span class="tab-count" id="tab-count-checklist"></span></button>
             <button class="tab" type="button" role="tab" id="tab-evidence" aria-controls="tabpanel-evidence" aria-selected="false" tabindex="-1">Evidence</button>
           </div>
 
-          <div class="tabpanel" role="tabpanel" id="tabpanel-restrictions" aria-labelledby="tab-restrictions" tabindex="0">
-            <p class="placeholder">Restrictions extracted from the label, each with its quote, page and verification status, will be listed here.</p>
-          </div>
-          <div class="tabpanel" role="tabpanel" id="tabpanel-checklist" aria-labelledby="tab-checklist" tabindex="0" hidden>
-            <p class="placeholder">The screening checklist will be listed here.</p>
-          </div>
-          <div class="tabpanel" role="tabpanel" id="tabpanel-evidence" aria-labelledby="tab-evidence" tabindex="0" hidden>
-            <p class="placeholder">Measured extraction results on real labels will be shown here.</p>
-          </div>
+          <div class="tabpanel" role="tabpanel" id="tabpanel-restrictions" aria-labelledby="tab-restrictions" tabindex="0"></div>
+          <div class="tabpanel" role="tabpanel" id="tabpanel-checklist" aria-labelledby="tab-checklist" tabindex="0" hidden></div>
+          <div class="tabpanel" role="tabpanel" id="tabpanel-evidence" aria-labelledby="tab-evidence" tabindex="0" hidden></div>
+
+          <section class="wind" id="wind-strip" aria-labelledby="wind-heading"></section>
         </aside>
       </main>
 
       <footer class="app-footer">
-        Screening aid, not a legal determination. The label and the applicator's judgment govern.
+        <span>Screening aid, not a legal determination. The label and the applicator's judgment govern.</span>
+        <span class="footer-credits">Labels: U.S. EPA PPLS · Water: USGS NHD, USFWS NWI · Imagery: Esri · Weather: Open-Meteo</span>
       </footer>
     </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
