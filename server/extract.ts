@@ -60,7 +60,7 @@ export function buildPrompt(anchorWords: number = DEFAULT_ANCHOR_WORDS): string 
     '3. page is the 1-based index of the page inside this PDF file, counting from the very first page of the file, including EPA cover letter or stamp pages. Do not use the page number printed on the label.',
     `4. quote is a short anchor copied character for character from the label text: the clause itself, at most ${anchorWords} words, with every number exactly as printed. Pick words that make it unique on that page (include its distance, wind speed or standard number). No paraphrase, no ellipsis, no added words, no merged text from different places, do not fix typos.`,
     '5. distanceFt only for water_buffer and filter_strip: the horizontal distance in feet as printed. windMinMph / windMaxMph only for wind_limit clauses that forbid application outside a wind speed; conditional rules that depend on wind speed (boom length, swath displacement) are kind other, with the speeds in note.',
-    '6. Put exemptions (e.g. for mosquito control districts), reductions, state-specific scope (e.g. New York) and other conditions in note.',
+    '6. When a clause applies only in one US state (e.g. "In New York State ..."), set state to its two-letter code (e.g. "NY"). Put exemptions (e.g. for mosquito control districts), reductions, state-specific details and other conditions in note.',
     '7. Never invent a restriction, number, page or quote. If you are not sure a clause is printed in this label, leave it out. If the label has none of these restrictions, return an empty restrictions list.',
     '',
     'Also return the product name and the EPA Reg. No. as printed.',

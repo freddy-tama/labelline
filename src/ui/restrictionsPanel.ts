@@ -7,8 +7,9 @@ import type { AppState } from '../store';
 import type { Method, RestrictionKind, VerifiedRestriction } from '../types';
 import { appliesTo, METHOD_LABELS, scopeLabel } from '../checklist/machine';
 import type { LabelBufferSet, SkipReason } from '../geo/buffers';
+import { stateName, stateScope } from '../extract/stateScope';
 import { fmtChicago, h, icon, plural, replaceKeepingFocus } from './dom';
-import type { ViewState } from './viewState';
+import type { SampleLabel, ViewState } from './viewState';
 
 export interface RestrictionsHandlers {
   onSelect(id: string): void;
@@ -74,13 +75,23 @@ const SKIP_TEXT: Record<SkipReason, (ctx: { method: string; crop: string | null;
   other_method: ({ method }) => `Not drawn for ${method}`,
   other_crop: ({ crop }) => `Not drawn for ${crop ?? 'this crop'}`,
   crop_not_selected: ({ r }) => `Limited to ${(r.crops ?? []).join(', ')} — choose a crop to apply it`,
+  other_state: ({ r }) => stateOnlyText(r),
   no_distance: () => 'No distance given — not drawn',
   not_water_buffer: () => 'Not a water buffer',
 };
 
+/** "New York only — not applied": LabelLine has no state selector, so a state-limited clause is never used. */
+function stateOnlyText(r: VerifiedRestriction): string {
+  const code = stateScope(r);
+  return `${code ? stateName(code) : 'One state'} only — not applied (LabelLine does not know the field's state)`;
+}
+
 /** What this clause does on the map right now, in one line (null for kinds the map does not use). */
 function mapRole(r: VerifiedRestriction, state: Readonly<AppState>, buffers: LabelBufferSet | null): { text: string; tone: string } | null {
   const scope = scopeLabel(state.method, state.crop);
+  if (r.match && stateScope(r) && (r.kind === 'water_buffer' || r.kind === 'wind_limit' || r.prohibited)) {
+    return { text: stateOnlyText(r), tone: 'warn' };
+  }
   if (r.kind === 'wind_limit') {
     if (!r.match) return null;
     if (r.status === 'confirmed' && appliesTo(r, state.method, state.crop)) return { text: 'Used in the wind forecast screen', tone: 'info' };
@@ -180,6 +191,8 @@ function card(r: VerifiedRestriction, state: Readonly<AppState>, v: Readonly<Vie
   if (value) chips.append(h('span', { class: r.prohibited ? 'clause-value clause-value-danger' : 'clause-value' }, value));
   if (!r.prohibited) chips.append(h('span', { class: 'chip chip-method' }, SHORT_METHOD[r.method]));
   for (const crop of r.crops ?? []) if (!r.prohibited) chips.append(h('span', { class: 'chip chip-crop' }, crop));
+  const onlyIn = stateScope(r);
+  if (onlyIn) chips.append(h('span', { class: 'chip chip-crop', title: `Applies only in ${stateName(onlyIn)}` }, `${onlyIn} only`));
   if (r.kind === 'water_buffer' && r.protects) chips.append(h('span', { class: 'clause-protects' }, `from ${r.protects}`));
 
   const quote = h(
@@ -287,9 +300,21 @@ export function renderRestrictions(
   state: Readonly<AppState>,
   v: Readonly<ViewState>,
   handlers: RestrictionsHandlers,
+  sample: SampleLabel | null = null,
 ): void {
   const ex = v.extraction;
   const nodes: (HTMLElement | null)[] = [];
+
+  // Bundled labels with older wording (manifest `legacy`) are never shown as if they were current.
+  if (sample?.legacy && state.labelFile) {
+    nodes.push(
+      h(
+        'div',
+        { class: 'notice notice-warn', 'data-testid': 'legacy-notice' },
+        h('p', {}, h('strong', {}, 'Older label wording, not current.'), sample.legacyNote ? ` ${sample.legacyNote}` : ''),
+      ),
+    );
+  }
 
   switch (ex.phase) {
     case 'idle':
@@ -375,7 +400,9 @@ export function renderRestrictions(
           'div',
           { class: 'notice notice-replay' },
           h('p', {}, h('strong', {}, 'REPLAY'), ` — recorded Gemini output (${meta.model}) from ${fmtChicago(meta.recordedAt)}. Not a live call.`),
-          ex.liveError ? h('p', { class: 'notice-sub' }, `Live extraction failed: ${ex.liveError}`) : null,
+          ex.liveError
+            ? h('p', { class: 'notice-sub' }, `${ex.kept ? 'Live re-run' : 'Live extraction'} failed: ${ex.liveError}.${ex.kept ? ' The recorded result and your decisions are kept.' : ''}`)
+            : null,
           h('button', { type: 'button', class: 'btn btn-sm btn-secondary', 'data-key': 'ex:live', onclick: handlers.onRunLive }, 'Run live'),
         ),
       );
@@ -387,6 +414,9 @@ export function renderRestrictions(
           `Live extraction · ${meta.model} · ${(meta.latencyMs / 1000).toFixed(1)} s · quotes checked against this PDF`,
         ),
       );
+      if (ex.kept && ex.liveError) {
+        nodes.push(h('div', { class: 'notice notice-warn' }, `Live re-run failed: ${ex.liveError}. The earlier live result and your decisions are kept.`));
+      }
     }
     if (ex.dropped > 0) {
       nodes.push(h('div', { class: 'notice notice-warn' }, `Gemini returned ${plural(ex.dropped, 'malformed item')}. ${ex.dropped === 1 ? 'It was' : 'They were'} dropped, not guessed.`));

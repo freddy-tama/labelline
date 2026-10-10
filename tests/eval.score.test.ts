@@ -128,7 +128,8 @@ describe('scoreLabel', () => {
     const s = scoreLabel(KEY, perfect(), META);
     expect(s.recall).toEqual({ found: 6, total: 6 });
     expect(s.precision).toEqual({ correct: 6, total: 6 });
-    expect(s.keyMatchedPrecision).toEqual({ correct: 6, total: 6 });
+    expect(s.notInKey).toBe(0);
+    expect(s.unmatchedProhibitions).toBe(0);
     expect(s.verifiedQuoteRate).toEqual({ verified: 7, total: 7 });
     expect(s.prohibitions).toEqual({ found: 1, total: 1 });
     expect(s.misses).toEqual([]);
@@ -139,7 +140,7 @@ describe('scoreLabel', () => {
     expect(formatRatio(s.verifiedQuoteRate)).toBe('7/7 (100%)');
   });
 
-  it('counts a wrong method as a miss, explains it, and still credits the verified sentence in precision', () => {
+  it('counts a wrong method as a miss and as wrong in precision, even though the sentence is in the PDF', () => {
     const rs = perfect();
     rs[0] = ext({ kind: 'water_buffer', method: 'any', distanceFt: 25, quote: G25, page: 7 });
     const s = scoreLabel(KEY, rs, META);
@@ -147,10 +148,10 @@ describe('scoreLabel', () => {
     expect(s.misses).toHaveLength(1);
     expect(s.misses[0]).toMatchObject({ cats: ['buffer_ground'], method: 'ground', distanceFt: 25, page: 7 });
     expect(s.misses[0].why).toContain('method any');
-    expect(s.precision).toEqual({ correct: 6, total: 6 });
-    expect(s.keyMatchedPrecision).toEqual({ correct: 5, total: 6 });
-    expect(s.extras[0]).toMatchObject({ method: 'any', distanceFt: 25, verified: true, counted: 'correct' });
-    expect(s.extras[0].why).toContain('same sentence as key item buffer_ground (ground, p7) but not matched');
+    expect(s.precision).toEqual({ correct: 5, total: 6 });
+    expect(s.extras[0]).toMatchObject({ method: 'any', distanceFt: 25, verified: true, counted: 'incorrect' });
+    expect(s.extras[0].why).toContain('buffer_ground');
+    expect(s.extras[0].why).toContain('disagrees on method');
   });
 
   it('requires equal numbers: a wrong distance is a miss and, unverified, an incorrect extra', () => {
@@ -187,12 +188,39 @@ describe('scoreLabel', () => {
     expect(s.extras[0].why).toContain('numbers');
   });
 
-  it('credits a verified clause that is not in the answer key in precision but not in keyMatchedPrecision', () => {
-    const ny = 'In New York State this product may not be applied within 100 feet of coastal marshes.';
-    const s = scoreLabel(KEY, [...perfect(), ext({ kind: 'water_buffer', method: 'ground', distanceFt: 100, quote: ny, page: 7 })], META);
+  it('does not credit a verified clause whose sentence is not in the answer key, and counts it in notInKey', () => {
+    // e.g. "Do not apply within 30 days of harvest" read as a 30 ft water buffer: the digits are on the page.
+    const harvest = 'Do not apply within 30 days of harvest.';
+    const s = scoreLabel(KEY, [...perfect(), ext({ kind: 'water_buffer', method: 'aerial', distanceFt: 30, quote: harvest, page: 10 })], META);
+    expect(s.precision).toEqual({ correct: 6, total: 7 });
+    expect(s.notInKey).toBe(1);
+    expect(s.extras[0]).toMatchObject({ distanceFt: 30, verified: true, counted: 'not in key' });
+    expect(s.extras[0].why).toContain('not in the answer key');
+  });
+
+  it('counts a key sentence read with the wrong method as wrong (450 ft ULV sentence tagged ground)', () => {
+    const s = scoreLabel(KEY, [...perfect(), ext({ kind: 'water_buffer', method: 'ground', distanceFt: 450, quote: U450, page: 7 })], META);
+    expect(s.precision).toEqual({ correct: 6, total: 7 });
+    const extra = s.extras.find((e) => e.distanceFt === 450)!;
+    expect(extra.counted).toBe('incorrect');
+    expect(extra.why).toContain('buffer_aerial_ulv');
+    expect(extra.why).toContain('method');
+  });
+
+  it('counts a key sentence read with the wrong crop as wrong', () => {
+    const s = scoreLabel(KEY, [...perfect(), ext({ kind: 'water_buffer', method: 'aerial', distanceFt: 150, crops: ['cotton'], quote: A150, page: 7 })], META);
+    expect(s.precision).toEqual({ correct: 6, total: 7 });
+    expect(s.extras[0]).toMatchObject({ counted: 'incorrect', crops: ['cotton'] });
+    expect(s.extras[0].why).toContain('crops');
+  });
+
+  it('credits a repeat of an already matched key item once in recall and as correct in precision', () => {
+    // The second filter-strip sentence (VFS2) is grouped with VFS1 in the key; both are real clauses.
+    const s = scoreLabel(KEY, [...perfect(), ext({ kind: 'filter_strip', method: 'any', distanceFt: 10, quote: VFS2, page: 4 })], META);
+    expect(s.recall).toEqual({ found: 6, total: 6 });
     expect(s.precision).toEqual({ correct: 7, total: 7 });
-    expect(s.keyMatchedPrecision).toEqual({ correct: 6, total: 7 });
-    expect(s.extras[0].why).toContain('no matching answer-key item');
+    expect(s.extras[0]).toMatchObject({ counted: 'correct' });
+    expect(s.extras[0].why).toContain('repeats key item vfs');
   });
 
   it('does not let a generic (all-crop) ULV ban match the rice-only key prohibition', () => {
@@ -205,6 +233,7 @@ describe('scoreLabel', () => {
     expect(s.misses[0].why).toContain('no crops');
     expect(s.extras[0]).toMatchObject({ prohibited: true, counted: 'not counted' });
     expect(s.extras[0].why).toContain('rice_no_ulv');
+    expect(s.unmatchedProhibitions).toBe(1);
   });
 
   it('counts duplicated key sentences once and picks the matching that finds the most', () => {
@@ -253,7 +282,8 @@ describe('scoreLabel', () => {
       precision: { correct: 6, total: 6 },
       verifiedQuoteRate: { verified: 7, total: 7 },
       prohibitions: { found: 1, total: 2 },
-      keyMatchedPrecision: { correct: 6, total: 6 },
+      notInKey: 0,
+      unmatchedProhibitions: 0,
     });
   });
 });

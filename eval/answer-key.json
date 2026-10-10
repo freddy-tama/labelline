@@ -1,5 +1,5 @@
 {
-  "_note": "Hand-checked answer key draft. Quotes are verified by scripts_labels/verify_key.py (pdftotext) and pdfjs_probe/verify.mjs (pdf.js). pdf_page = 1-based PDF page index (PPLS PDFs start with an EPA cover letter, so printed label page numbers differ).",
+  "_note": "Answer key compiled from the label PDFs by AI research and build agents; not reviewed by a pesticide-label expert. Quotes are verified by scripts_labels/verify_key.py (pdftotext) and pdfjs_probe/verify.mjs (pdf.js). pdf_page = 1-based PDF page index (PPLS PDFs start with an EPA cover letter, so printed label page numbers differ).",
   "_annotation": "kind, method, acceptMethods, crops, prohibited, distanceFt, windMinMph, windMaxMph, state, notes and added were added on 2026-10-11 for the 6 bundled labels only, by reading each quote in context in the pdf.js text of the bundled PDF. Original fields are unchanged. Rules, added items and uncertain items: eval/ANNOTATION.md.",
   "labels": [
     {

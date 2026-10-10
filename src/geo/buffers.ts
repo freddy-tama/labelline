@@ -4,6 +4,7 @@
 
 import { bbox as turfBbox, bboxClip, buffer as turfBuffer, featureCollection, union as turfUnion } from '@turf/turf';
 import type { BufferSet, Method, VerifiedRestriction } from '../types';
+import { stateScope } from '../extract/stateScope';
 
 export const FT_TO_M = 0.3048;
 /** Arc segments per quarter circle for turf.buffer (default 8). */
@@ -19,6 +20,7 @@ export type SkipReason =
   | 'other_method'
   | 'other_crop'
   | 'crop_not_selected' // clause is limited to crops but no crop is chosen: shown, not silently applied
+  | 'other_state' // clause is limited to one US state (e.g. "In New York State"): LabelLine has no state selector, so never applied
   | 'no_distance'
   | 'not_water_buffer';
 
@@ -91,7 +93,8 @@ function cropCheck(restriction: VerifiedRestriction, crop: string | null): CropC
  * Chooses the clause to draw. Only clauses that are confirmed by the user AND whose quote was found
  * in the PDF count. Exact-method and 'any'-method clauses are both considered; the largest distance
  * wins (the conservative choice). A confirmed, verified clause marking the method prohibited for the
- * crop wins over any distance.
+ * crop wins over any distance. A clause limited to one state (src/extract/stateScope.ts) is skipped
+ * as 'other_state': LabelLine does not know the field's state.
  */
 export function selectWaterBuffer(
   restrictions: readonly VerifiedRestriction[],
@@ -124,6 +127,10 @@ export function selectWaterBuffer(
     const crops = cropCheck(r, crop);
     if (crops !== 'ok') {
       skipped.push({ id: r.id, reason: crops });
+      continue;
+    }
+    if (stateScope(r)) {
+      skipped.push({ id: r.id, reason: 'other_state' });
       continue;
     }
     if (r.prohibited === true) {
@@ -226,6 +233,20 @@ function clipToBox(feature: GeoJSON.Feature<GeoJSON.Geometry | null>, box: [numb
     default:
       return null;
   }
+}
+
+/**
+ * The water features that can reach the field with a buffer of `distanceFt`: those whose bounding box
+ * touches the same grown box buildBuffers clips to. Used to drop observed water left over from a
+ * previous field far away, while keeping water drawn next to the new field.
+ */
+export function waterNearField<F extends GeoJSON.Feature<GeoJSON.Geometry | null>>(
+  features: readonly F[],
+  field: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>,
+  distanceFt: number,
+): F[] {
+  const box = grownBbox(field, feetToMeters(Math.max(0, distanceFt)) * 1.1 + 50);
+  return features.filter((f) => hasCoordinates(f.geometry) && overlaps(turfBbox(f.geometry), box));
 }
 
 /** Unions polygon features; returns null for an empty list. */

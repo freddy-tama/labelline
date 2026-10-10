@@ -5,7 +5,7 @@
 
 import type { AppState } from '../store';
 import type { Method } from '../types';
-import { CHECKLIST_ITEM_ORDER } from '../checklist/machine';
+import { CHECKLIST_ITEM_ORDER, screeningStatus } from '../checklist/machine';
 import { byId, fmtChicago, h } from './dom';
 import type { SampleLabel, ViewState } from './viewState';
 
@@ -109,17 +109,21 @@ export function renderHeader(state: Readonly<AppState>, v: Readonly<ViewState>, 
   }
 
   const done = CHECKLIST_ITEM_ORDER.filter((id) => state.checklist.items[id]?.done).length;
-  const complete = state.checklist.status === 'complete';
+  // Green only when every item is recorded with no flags; "recorded · N flags" stays in the warning style.
+  const screening = screeningStatus(state.checklist);
   const status = byId('status-badge');
   status.replaceChildren(
     h('span', { class: 'status-dot', 'aria-hidden': 'true' }),
-    complete ? 'Screening complete' : 'Screening incomplete',
+    screening.label,
     h('span', { class: 'status-count' }, `${done}/${CHECKLIST_ITEM_ORDER.length}`),
   );
-  status.classList.toggle('is-complete', complete);
-  status.title = complete
-    ? 'Every checklist item is recorded. This is a screening record, not a legal determination.'
-    : `${CHECKLIST_ITEM_ORDER.length - done} checklist item(s) still to record.`;
+  status.classList.toggle('is-complete', screening.tone === 'ok');
+  status.classList.toggle('is-flagged', screening.complete && screening.tone !== 'ok');
+  status.title = !screening.complete
+    ? `${CHECKLIST_ITEM_ORDER.length - done} checklist item(s) still to record.`
+    : screening.flags.length > 0
+      ? `Every checklist item is recorded, with flags. First: ${screening.flags[0]} This is a screening record, not a legal determination.`
+      : 'Every checklist item is recorded. This is a screening record, not a legal determination.';
 
   const exportBtn = byId<HTMLButtonElement>('export-btn');
   exportBtn.disabled = !state.labelFile && !state.field;

@@ -10,6 +10,7 @@ import {
   initialChecklist,
   parseBulletin,
   parseMph,
+  screeningStatus,
   summariseClauses,
   toMachineState,
   windLimitsFor,
@@ -446,6 +447,60 @@ describe('status', () => {
     expect(checklistFlags(s)).toEqual([
       { id: 'onsite_wind', flag: 'Measured 21 mph is above the 15 mph limit in confirmed clause r4 (PDF p. 7).' },
     ]);
+  });
+});
+
+describe('screeningStatus (header, checklist summary and record)', () => {
+  it('is never the green "complete" while a flag stands: wind over the label limit', () => {
+    const s = run(sync([confirm(aerial150), confirm(wind15)]), ...ALL_USER_DONE, { type: 'set_onsite_wind', mph: 21, at: T2 });
+    expect(screeningStatus(s)).toEqual({
+      tone: 'warn',
+      label: 'Screening recorded · 1 flag',
+      complete: true,
+      flags: ['Measured 21 mph is above the 15 mph limit in confirmed clause r4 (PDF p. 7).'],
+    });
+  });
+
+  it('is never the green "complete" when a confirmed clause prohibits the method', () => {
+    const ban = confirm(clause({ id: 'r9', kind: 'other', method: 'aerial_ulv', distanceFt: undefined, prohibited: true, crops: ['corn'], page: 10 }));
+    const s = run(sync([ban], { method: 'aerial_ulv', crop: 'corn' }), ...ALL_USER_DONE);
+    expect(s.status).toBe('complete');
+    const status = screeningStatus(s);
+    expect(status.tone).toBe('warn');
+    expect(status.label).toBe('Screening recorded · 1 flag');
+    expect(status.flags[0]).toContain('prohibits Aerial ULV on corn');
+  });
+
+  it('is green only when complete with no flags, and incomplete otherwise', () => {
+    expect(screeningStatus(run(sync([confirm(aerial150)]), ...ALL_USER_DONE))).toMatchObject({ tone: 'ok', label: 'Screening complete', complete: true });
+    expect(screeningStatus(run(sync([confirm(aerial150)])))).toMatchObject({ tone: 'warn', label: 'Screening incomplete', complete: false });
+  });
+});
+
+describe('state-limited clauses (no state selector)', () => {
+  // Brigade 2EC p7 (answer key state_ny / state_ny_aerial): the clause verifies, but applies in New York only.
+  const NY = 'In New York State this product may not be applied within 100 feet (using ground equipment) to 300 feet (using aerial equipment) of coastal marshes or streams that drain into coastal marshes.';
+  const nyAerial = confirm(clause({ id: 'r20', method: 'aerial', distanceFt: 300, quote: NY }));
+  const nyGround = confirm(clause({ id: 'r21', method: 'ground', distanceFt: 100, quote: NY, state: 'NY' }));
+
+  it('never lets a New York clause set the buffer on a field of unknown state, and flags it', () => {
+    const aerial = summariseClauses([confirm(aerial150), nyAerial], 'aerial', null);
+    expect(aerial.buffer).toMatchObject({ id: 'r1', distanceFt: 150 });
+    expect(aerial.stateLimitedSkipped).toEqual({ count: 1, states: ['NY'] });
+    const ground = summariseClauses([confirm(ground25), nyGround], 'ground', null);
+    expect(ground.buffer).toMatchObject({ id: 'r2', distanceFt: 25 });
+    const s = run(sync([confirm(aerial150), nyAerial]));
+    expect(s.items.clauses_confirmed.done).toBe(true);
+    expect(s.items.clauses_confirmed.flags?.join(' ')).toContain('limited to New York not applied');
+    for (const [method, set] of [['aerial', [confirm(aerial150), nyAerial]], ['ground', [confirm(ground25), nyGround]]] as const) {
+      expect(selectWaterBuffer(set, method, null).chosen?.id).toBe(method === 'aerial' ? 'r1' : 'r2');
+      expect(selectWaterBuffer(set, method, null).skipped).toContainEqual({ id: method === 'aerial' ? 'r20' : 'r21', reason: 'other_state' });
+    }
+  });
+
+  it('does not use a state-limited wind clause for the wind screen', () => {
+    const nyWind = confirm(clause({ id: 'r22', kind: 'wind_limit', method: 'any', distanceFt: undefined, windMaxMph: 5, quote: 'In New York, do not apply when wind speed exceeds 5 mph.' }));
+    expect(windLimitsFor([confirm(wind15), nyWind], 'aerial', null)).toEqual({ maxMph: 15 });
   });
 });
 

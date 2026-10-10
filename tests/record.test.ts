@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import { checklistReducer, initialChecklist, type ChecklistAction } from '../src/checklist/machine';
 import { escapeHtml, formatChicago, openRecordWindow, RECORD_FOOTER, renderMapSvg, renderRecord, type RecordInput } from '../src/record/export';
+import { buildBuffers } from '../src/geo/buffers';
 import { initialAppState, type WaterCollection } from '../src/store';
 import type { AreaResult, BufferSet, VerifiedRestriction } from '../src/types';
 import { nextHours, parseOpenMeteo, screenWind } from '../src/wind/openmeteo';
@@ -158,7 +159,26 @@ describe('renderRecord', () => {
     expect(html).toContain('sample label');
     expect(html).toContain('sample location');
     expect(html).toContain('REPLAY');
-    expect(html).toContain('Screening checklist complete');
+    // Every step is recorded, but the on-site wind (18 mph) is over the 15 mph limit and one clause was not
+    // found: the record never shows the green "complete" while flags stand.
+    expect(html).toContain('<span class="status status-flagged">Screening recorded · 2 flags</span>');
+    expect(html).not.toContain('Screening checklist complete');
+    expect(html).toContain('<li class="flag">⚑ Measured 18 mph is above the 15 mph limit in confirmed clause r4 (PDF p. 7).</li>');
+    expect(html).toContain('<h2>Screening checklist — recorded with 2 flags</h2>');
+  });
+
+  it('shows the green complete only when nothing is flagged', () => {
+    const clean = [restrictions[0]!, restrictions[3]!];
+    const checklist = [
+      { type: 'sync', restrictions: clean, method: 'aerial', crop: null, observedCount: 1, epaRegNo: '279-3313', applicationMonth: '2026-10', at: T },
+      { type: 'set_blt', bulletin: 'no PULA', printableDownloaded: true, at: T },
+      { type: 'set_field_walked', walked: true, at: T },
+      { type: 'set_onsite_wind', mph: 8, at: T },
+      { type: 'set_mitigation', applicable: false, text: 'Full label buffer used', at: T },
+    ].reduce((s, a) => checklistReducer(s, a as ChecklistAction), initialChecklist());
+    const html = renderRecord(input({ restrictions: clean, checklist }));
+    expect(html).toContain('<span class="status status-complete">Screening checklist complete</span>');
+    expect(html).toContain('<h2>Screening checklist — complete</h2>');
   });
 
   it('shows acreage with the honest wording and the buffer basis', () => {
@@ -216,6 +236,12 @@ describe('renderRecord', () => {
     expect(html).toContain('Forecast at 10 m; labels refer to on-site wind — measure on site.');
     expect(html).toContain('<a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a>');
     expect(html).toMatch(/\d+ of 24 forecast hours/);
+  });
+
+  it('cites the label for the sustained limit and names the gust check as LabelLine’s own', () => {
+    expect(html).toContain('sustained above 15 mph (label clause r4, PDF p. 7)');
+    expect(html).toContain('gusts above 15 mph (LabelLine&#39;s own conservative check against the label&#39;s wind-speed limit, not a gust limit printed on the label)');
+    expect(html).not.toContain('marked against the confirmed label limit');
   });
 
   it('includes the checklist with values, flags and Chicago timestamps', () => {
@@ -299,6 +325,61 @@ describe('renderRecord edge states', () => {
     const html = renderRecord(input({ restrictions: [ulvRice], method: 'aerial_ulv', crop: 'rice', checklist, buffers: null }));
     expect(html).toContain('Confirmed clause r8 (PDF p. 28) prohibits Aerial ULV on rice.');
     expect(html).toContain('Prohibits this method');
+
+    // With the buffer set geo/buffers returns for a prohibition, the basis line says so (never "no clause applies").
+    const prohibitedSet: BufferSet = { method: 'aerial_ulv', distanceFt: 0, restrictionId: 'r8', union: null, prohibited: true, prohibitedRestrictionId: 'r8' };
+    const withSet = renderRecord(input({ restrictions: [ulvRice], method: 'aerial_ulv', crop: 'rice', checklist, buffers: prohibitedSet, area: null }));
+    expect(withSet).toContain('Buffer: None drawn: confirmed clause r8 (PDF p. 28) prohibits Aerial ULV on rice.');
+    expect(withSet).not.toContain('no confirmed, verified water-buffer clause applies');
+    expect(withSet).toContain('<tr><th>Label buffer for this method</th><td>Method prohibited by a confirmed clause (see Acreage)</td></tr>');
+  });
+
+  it('names the applicable clause when no mapped or observed water lies within its distance', () => {
+    // The real geo/buffers result for a confirmed 150 ft aerial clause and an empty water collection.
+    const empty: WaterCollection = { type: 'FeatureCollection', features: [] };
+    const set = buildBuffers(empty, restrictions, 'aerial', null, { clipTo: field });
+    expect(set).toMatchObject({ restrictionId: 'r1', distanceFt: 150, union: null, prohibited: false });
+    const html = renderRecord(
+      input({ mappedWater: empty, observedWater: empty, waterStatus: { state: 'unavailable' }, buffers: set, area: { ...area, acresBuffered: 0, acresOutside: 87.6, outside: null } }),
+    );
+    expect(html).toContain(
+      'Buffer: 150 ft from clause r1 (PDF p. 7) applies to Aerial (non-ULV); no mapped or observed water loaded so far lies within 150 ft of the field, so no buffer area was drawn.',
+    );
+    expect(html).not.toContain('no confirmed, verified water-buffer clause applies');
+    expect(html).toContain('<tr><th>Label buffer for this method</th><td>150 ft (clause r1, PDF p. 7)</td></tr>');
+  });
+
+  it('falls back to the sample manifest for product and Reg. No., says so, and prints the PPLS source', () => {
+    const html = renderRecord(
+      input({
+        extractMeta: { model: 'gemini-3.8-flash', latencyMs: 9000, mode: 'replay', recordedAt: '2026-10-10T19:00:00Z' },
+        sample: {
+          product: 'Brigade 2EC Insecticide/Miticide',
+          epaRegNo: '279-3313',
+          sourceUrl: 'https://www3.epa.gov/pesticides/chem_search/ppls/000279-03313-20260630.pdf',
+          retrieved: '2026-10-10',
+        },
+      }),
+    );
+    expect(html).toContain('<title>LabelLine screening record — Brigade 2EC Insecticide/Miticide</title>');
+    expect(html).toContain('<dt>Product</dt><dd>Brigade 2EC Insecticide/Miticide</dd>');
+    expect(html).toContain('<dt>EPA Reg. No.</dt><dd>279-3313 <span class="small">(from the bundled sample manifest, not extracted)</span></dd>');
+    expect(html).toContain('<tr><th>EPA Reg. No. to enter</th><td>279-3313 <span class="small">(from the bundled sample manifest, not extracted)</span></td></tr>');
+    expect(html).toContain('EPA PPLS: <a href="https://www3.epa.gov/pesticides/chem_search/ppls/000279-03313-20260630.pdf">');
+    expect(html).toContain('retrieved October 10, 2026');
+    expect(html).toContain('<dt>Field</dt><dd>Sample field loaded <span class="tag">illustrative sample location</span></dd>');
+    expect(html).not.toContain('Not extracted');
+  });
+
+  it('marks an older (legacy) sample label as not current, and a drawn field as drawn', () => {
+    const html = renderRecord(
+      input({
+        field: { ...field, properties: { label: 'Drawn field' } },
+        sample: { product: 'Baythroid XL', epaRegNo: '264-840', legacy: true, legacyNote: 'wording from before 2020' },
+      }),
+    );
+    expect(html).toContain('⚑ Older label wording, not current: wording from before 2020');
+    expect(html).toContain('<dt>Field</dt><dd>Drawn on the map</dd>');
   });
 });
 

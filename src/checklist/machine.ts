@@ -14,6 +14,7 @@
 
 import type { ChecklistItemId, ChecklistState, Method, Restriction, VerifiedRestriction } from '../types';
 import { bltMonth, monthOf, MONTH_NAMES, parseIsoMonth, type BulletinMonth } from '../wind/openmeteo';
+import { stateName, stateScope } from '../extract/stateScope';
 
 export const CHECKLIST_ITEM_ORDER: readonly ChecklistItemId[] = [
   'clauses_confirmed',
@@ -89,6 +90,8 @@ export interface ClauseSummary {
   wind: { minMph?: number; maxMph?: number; minRef?: ClauseRef; maxRef?: ClauseRef };
   /** Confirmed clauses limited to crops that were not applied because no crop is selected. */
   cropLimitedSkipped: number;
+  /** Confirmed clauses for this method limited to one US state; never applied (no state selector). */
+  stateLimitedSkipped: { count: number; states: string[] };
 }
 
 export interface ChecklistInputs {
@@ -152,9 +155,13 @@ export function cropMatches(clauseCrop: string, crop: string): boolean {
   return a === b || contains(a, b) || contains(b, a);
 }
 
-/** A clause applies to the method (exact or "any") and the crop (absent crops = all crops; no crop chosen = crop-limited clauses do not apply). */
-export function appliesTo(r: Pick<Restriction, 'method' | 'crops'>, method: Method, crop: string | null): boolean {
+/**
+ * A clause applies to the method (exact or "any") and the crop (absent crops = all crops; no crop chosen =
+ * crop-limited clauses do not apply). A clause limited to one US state never applies (no state selector).
+ */
+export function appliesTo(r: Pick<Restriction, 'method' | 'crops' | 'state'> & { quote?: string; match?: unknown }, method: Method, crop: string | null): boolean {
   if (r.method !== method && r.method !== 'any') return false;
+  if (stateScope(r)) return false;
   const crops = (r.crops ?? []).filter((c) => typeof c === 'string' && c.trim() !== '');
   if (crops.length === 0) return true;
   if (crop === null || crop.trim() === '') return false;
@@ -197,6 +204,7 @@ export function summariseClauses(restrictions: readonly VerifiedRestriction[], m
     }
   }
 
+  const stateLimited = usable.filter((r) => (r.method === method || r.method === 'any') && stateScope(r) !== null);
   return {
     method,
     crop: cropName,
@@ -209,7 +217,8 @@ export function summariseClauses(restrictions: readonly VerifiedRestriction[], m
     buffer: largest ? { ...ref(largest), distanceFt: largest.distanceFt! } : null,
     prohibitedBy: applicable.filter((r) => r.prohibited === true).map(ref),
     wind,
-    cropLimitedSkipped: noCrop ? usable.filter((r) => (r.method === method || r.method === 'any') && hasCrops(r)).length : 0,
+    cropLimitedSkipped: noCrop ? usable.filter((r) => (r.method === method || r.method === 'any') && hasCrops(r) && !stateScope(r)).length : 0,
+    stateLimitedSkipped: { count: stateLimited.length, states: [...new Set(stateLimited.map((r) => stateScope(r)!))] },
   };
 }
 
@@ -288,6 +297,12 @@ function evalClauses(ctx: ChecklistContext): Evaluated {
   }
   if (s.cropLimitedSkipped > 0) {
     flags.push(`${plural(s.cropLimitedSkipped, 'crop-limited clause')} not applied because no crop is selected.`);
+  }
+  if (s.stateLimitedSkipped?.count > 0) {
+    const names = s.stateLimitedSkipped.states.map(stateName).join(', ');
+    flags.push(
+      `${plural(s.stateLimitedSkipped.count, 'confirmed clause')} limited to ${names} not applied: LabelLine does not know the field's state. If the field is there, apply ${s.stateLimitedSkipped.count === 1 ? 'it' : 'them'} yourself.`,
+    );
   }
   const withFlags = (e: Evaluated): Evaluated => (flags.length > 0 ? { ...e, flags } : e);
 
@@ -499,6 +514,28 @@ export function checklistFlags(state: ChecklistState): { id: ChecklistItemId; fl
     for (const flag of flags) out.push({ id, flag });
   }
   return out;
+}
+
+export interface ScreeningStatus {
+  /** 'ok' only when every item is recorded and nothing is flagged. */
+  tone: 'ok' | 'warn';
+  /** "Screening incomplete", "Screening recorded · 2 flags" or "Screening complete". */
+  label: string;
+  complete: boolean;
+  flags: string[];
+}
+
+/**
+ * The status the header, the checklist summary and the record show. A complete checklist that still
+ * carries flags (on-site wind above the label limit, a prohibited method, a bulletin for another month)
+ * is "Screening recorded · N flags" in the warning style, never the green "complete", so a screenshot
+ * cannot read as a go signal.
+ */
+export function screeningStatus(state: ChecklistState): ScreeningStatus {
+  const flags = checklistFlags(state).map((f) => f.flag);
+  if (state.status !== 'complete') return { tone: 'warn', label: 'Screening incomplete', complete: false, flags };
+  if (flags.length > 0) return { tone: 'warn', label: `Screening recorded · ${plural(flags.length, 'flag')}`, complete: true, flags };
+  return { tone: 'ok', label: 'Screening complete', complete: true, flags };
 }
 
 // ---------- Bulletins Live! Two pre-fill ----------

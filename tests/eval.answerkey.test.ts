@@ -127,6 +127,29 @@ describe('scorer on the real label text', () => {
     expect(s.extras[0].why).toContain('aerial_release_height');
   });
 
+  it('counts the Brigade 2EC p7 450 ft ULV sentence tagged ground as wrong in precision', () => {
+    const raw: Restriction[] = [
+      { id: 'r1', kind: 'water_buffer', method: 'ground', distanceFt: 450, quote: 'Do not apply within 450 feet of aquatic habitats', page: 7 },
+      { id: 'r2', kind: 'water_buffer', method: 'aerial', distanceFt: 150, quote: 'Do not apply within 150 feet of aquatic habitats', page: 7 },
+    ];
+    const checked = verifyRestrictions(raw, pages.get('brigade2ec')!);
+    expect(checked.every((r) => r.match !== null)).toBe(true);
+    const s = scoreLabel(items('brigade2ec'), checked, { slug: 'brigade2ec', product: 'Brigade', mode: 'replay', model: 'test' });
+    expect(s.precision).toEqual({ correct: 1, total: 2 });
+    expect(s.extras).toEqual([expect.objectContaining({ id: 'r1', counted: 'incorrect' })]);
+    expect(s.extras[0].why).toContain('method');
+  });
+
+  it('does not credit "30 days of harvest" read as a 30 ft water buffer, although its digits verify', () => {
+    const raw: Restriction[] = [{ id: 'r1', kind: 'water_buffer', method: 'any', distanceFt: 30, quote: 'Do not apply within 30 days of harvest', page: 10 }];
+    const checked = verifyRestrictions(raw, pages.get('brigade2ec')!);
+    expect(checked[0].match).not.toBeNull(); // the number rule checks digits, not units
+    const s = scoreLabel(items('brigade2ec'), checked, { slug: 'brigade2ec', product: 'Brigade', mode: 'replay', model: 'test' });
+    expect(s.precision).toEqual({ correct: 0, total: 1 });
+    expect(s.notInKey).toBe(1);
+    expect(s.extras[0].counted).toBe('not in key');
+  });
+
   it('does not count a ULV ban without the rice crop as the Warrior II rice prohibition', () => {
     const generic: Restriction = { id: 'x1', kind: 'other', method: 'aerial_ulv', prohibited: true, quote: 'Do not apply as an ultra-low volume (ULV) spray.', page: 28 };
     const rice: Restriction = { ...generic, id: 'x2', crops: ['rice'] };

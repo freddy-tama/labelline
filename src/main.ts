@@ -27,16 +27,16 @@ import {
   setObservedWater,
   setSprayable,
 } from './map/map';
-import { fetchMappedWater, MAPPED_WATER_DISCLOSURES } from './map/water';
-import { buildBuffers, type LabelBufferSet } from './geo/buffers';
+import { fetchMappedWater, MAPPED_WATER_DISCLOSURES, type MappedLayerId } from './map/water';
+import { buildBuffers, waterNearField, type LabelBufferSet } from './geo/buffers';
 import { sprayableArea } from './geo/area';
 import { bltMonth, fetchWind, screenWind } from './wind/openmeteo';
-import { checklistReducer, fieldCentroid, windLimitsFor, type ChecklistAction } from './checklist/machine';
+import { checklistReducer, fieldCentroid, isMachineState, windLimitsFor, type ChecklistAction } from './checklist/machine';
 import { openRecordWindow, renderRecord } from './record/export';
 import { byId } from './ui/dom';
 import { initHeader, renderHeader } from './ui/header';
 import { renderRestrictions, revealCard, type RestrictionsHandlers } from './ui/restrictionsPanel';
-import { labelChangeActions, renderChecklist, resetChecklistDrafts } from './ui/checklistPanel';
+import { fieldChangeActions, labelChangeActions, renderChecklist, resetChecklistDrafts } from './ui/checklistPanel';
 import { renderEvidence } from './ui/evidence';
 import { renderWind } from './ui/windStrip';
 import { renderReadout, renderWaterChip, renderWaterNotes } from './ui/fieldPanel';
@@ -131,19 +131,61 @@ function ensureViewer(Viewer: PdfModules['PdfViewer']): PdfViewer {
 }
 
 let currentDoc: PDFDocumentProxy | null = null;
+/** The bundled sample this label is: chosen from the list, or an upload whose bytes match it (SHA-256). */
 let currentSample: SampleLabel | null = null;
+/** True when currentSample was recognised from an uploaded file's bytes rather than chosen. */
+let sampleFromUpload = false;
 let labelAbort: AbortController | null = null;
 let extractAbort: AbortController | null = null;
 
 type LabelSource = { kind: 'sample'; sample: SampleLabel } | { kind: 'upload'; file: File };
+/** The last label the user chose, so "Try again" after a PDF that failed to open can reload it. */
+let lastSource: LabelSource | null = null;
+
+/** Hex SHA-256 of the bytes, or null where Web Crypto is unavailable (non-secure context). */
+async function sha256Hex(bytes: Uint8Array<ArrayBuffer>): Promise<string | null> {
+  try {
+    if (!globalThis.crypto?.subtle) return null;
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    return null;
+  }
+}
+
+/** The bundled sample whose manifest pdfSha256 equals these bytes' hash, if any. */
+async function matchBundledSample(bytes: Uint8Array<ArrayBuffer>): Promise<SampleLabel | null> {
+  const samples = view.get().samples.filter((s) => typeof s.pdfSha256 === 'string');
+  if (samples.length === 0) return null;
+  const hash = await sha256Hex(bytes);
+  return hash ? (samples.find((s) => s.pdfSha256!.toLowerCase() === hash) ?? null) : null;
+}
+
+/** The notice under the label controls: older label wording, or an upload recognised as a bundled sample. */
+function renderLabelNotice(): void {
+  const el = byId('label-notice');
+  const sample = currentSample;
+  const parts: string[] = [];
+  if (sample && sampleFromUpload) {
+    parts.push(`This upload is the same file as the bundled sample “${sample.product.replace(/\s*\(.*\)\s*$/, '')}” (SHA-256 match), so its recording can be used if live extraction fails.`);
+  }
+  if (sample?.legacy) parts.push(`Older label wording, not current. ${sample.legacyNote ?? ''}`.trim());
+  el.textContent = parts.join(' ');
+  el.hidden = parts.length === 0;
+  el.classList.toggle('is-warn', Boolean(sample?.legacy));
+}
 
 async function loadLabel(source: LabelSource): Promise<void> {
   labelAbort?.abort();
   extractAbort?.abort();
+  extractSnapshot = null;
   const ctrl = new AbortController();
   labelAbort = ctrl;
+  lastSource = source;
   const name = source.kind === 'sample' ? source.sample.product : source.file.name;
   currentSample = source.kind === 'sample' ? source.sample : null;
+  sampleFromUpload = false;
+  renderLabelNotice();
   byId<HTMLSelectElement>('sample-select').value = source.kind === 'sample' ? source.sample.slug : '';
   // Fetch pdf.js + viewer while the label downloads; awaited below. The no-op catch only keeps an early
   // failure from being reported as unhandled; awaiting the same promise still throws into the catch below.
@@ -174,12 +216,23 @@ async function loadLabel(source: LabelSource): Promise<void> {
     if (ctrl.signal.aborted) return;
     const bytes = new Uint8Array(await blob.arrayBuffer());
     if (new TextDecoder('latin1').decode(bytes.subarray(0, 5)) !== '%PDF-') throw new Error('This file is not a PDF.');
+    // An uploaded copy of a bundled sample is recognised by its bytes, so the header, the Reg. No. and the
+    // REPLAY fallback work as they do for the sample (the demo script uploads label #1 from disk).
+    if (source.kind === 'upload') {
+      const matched = await matchBundledSample(bytes);
+      if (ctrl.signal.aborted) return;
+      if (matched) {
+        currentSample = matched;
+        sampleFromUpload = true;
+        renderLabelNotice();
+      }
+    }
     store.set({
       labelFile: {
         name: source.kind === 'sample' ? `${source.sample.slug}.pdf` : source.file.name,
         sizeBytes: blob.size,
         source: source.kind,
-        slug: source.kind === 'sample' ? source.sample.slug : undefined,
+        slug: currentSample?.slug,
         blob,
       },
     });
@@ -215,6 +268,8 @@ async function loadLabel(source: LabelSource): Promise<void> {
     await extract('auto');
   } catch (error) {
     if (ctrl.signal.aborted) return;
+    // Reset the sample list so choosing the same sample again fires "change" and reloads it.
+    byId<HTMLSelectElement>('sample-select').value = '';
     view.set({ extraction: { phase: 'error', message: errorText(error), replayAvailable: false, pdfError: true } });
   }
 }
@@ -231,9 +286,33 @@ function startTicker(): void {
   }, 1000);
 }
 
+/**
+ * The result on screen when a new extraction starts over it ("Run live" from a REPLAY, or "Use recording"
+ * while a live re-run is in flight). If that extraction fails or is cancelled, this is put back with the
+ * applicator's decisions, and the failure is shown as a notice instead of wiping the confirmed clauses.
+ */
+interface ExtractSnapshot {
+  restrictions: AppState['restrictions'];
+  extractMeta: NonNullable<AppState['extractMeta']>;
+  mode: AppState['mode'];
+  dropped: number;
+}
+let extractSnapshot: ExtractSnapshot | null = null;
+
 function applyResult(result: ExtractionResult, liveError?: string): void {
+  extractSnapshot = null;
   store.set({ restrictions: result.restrictions, extractMeta: result.meta, mode: result.meta.mode });
   view.set({ extraction: { phase: 'done', dropped: result.dropped, liveError } });
+}
+
+/** Puts the earlier result back after a failed or cancelled re-run. False when there was none. */
+function restoreSnapshot(failure: string): boolean {
+  const snap = extractSnapshot;
+  extractSnapshot = null;
+  if (!snap) return false;
+  store.set({ restrictions: snap.restrictions, extractMeta: snap.extractMeta, mode: snap.mode });
+  view.set({ extraction: { phase: 'done', dropped: snap.dropped, liveError: failure, kept: true } });
+  return true;
 }
 
 function describeError(error: unknown): string {
@@ -249,6 +328,7 @@ async function replay(slug: string, ctrl: AbortController, liveError?: string): 
     applyResult(result, liveError);
   } catch (error) {
     if (ctrl.signal.aborted) return;
+    if (restoreSnapshot(`${liveError ? `${liveError}; ` : ''}the recording could not be loaded again: ${describeError(error)}`)) return;
     view.set({
       extraction: {
         phase: 'error',
@@ -267,6 +347,12 @@ async function extract(mode: 'auto' | 'live' | 'replay'): Promise<void> {
   extractAbort?.abort();
   const ctrl = new AbortController();
   extractAbort = ctrl;
+  // Keep what is on screen (with its decisions) so a failed or cancelled re-run can put it back.
+  const before = store.get();
+  const ex = view.get().extraction;
+  if (before.extractMeta) {
+    extractSnapshot = { restrictions: before.restrictions, extractMeta: before.extractMeta, mode: before.mode, dropped: ex.phase === 'done' ? ex.dropped : 0 };
+  }
   store.set({ restrictions: [], extractMeta: null });
   view.set({ activeId: null, hoverId: null });
 
@@ -284,6 +370,7 @@ async function extract(mode: 'auto' | 'live' | 'replay'): Promise<void> {
   } catch (error) {
     if (ctrl.signal.aborted) return;
     const message = describeError(error);
+    if (restoreSnapshot(message)) return;
     if (mode === 'auto' && replayAvailable && slug) return replay(slug, ctrl, message);
     view.set({ extraction: { phase: 'error', message, replayAvailable } });
   }
@@ -292,6 +379,7 @@ async function extract(mode: 'auto' | 'live' | 'replay'): Promise<void> {
 function cancelExtraction(): void {
   const ex = view.get().extraction;
   extractAbort?.abort();
+  if (restoreSnapshot('cancelled')) return;
   view.set({
     extraction: {
       phase: 'error',
@@ -326,7 +414,13 @@ const restrictionHandlers: RestrictionsHandlers = {
   onSelect: (id) => selectRestriction(id, 'card'),
   onHover: (id) => view.set({ hoverId: id }),
   onDecide: decide,
-  onRetry: () => void extract('auto'),
+  onRetry: () => {
+    // A PDF that failed to open (download, pdf.js module or a corrupt file) has nothing to extract from:
+    // load the same label again instead.
+    const ex = view.get().extraction;
+    if (ex.phase === 'error' && ex.pdfError && lastSource) void loadLabel(lastSource);
+    else void extract('auto');
+  },
   onUseReplay: () => {
     const slug = store.get().labelFile?.slug;
     if (!slug) return;
@@ -342,7 +436,37 @@ const restrictionHandlers: RestrictionsHandlers = {
 // ---------- map, water, buffers, acreage ----------
 
 initMap(byId('map'), { sampleButton: false });
-onFieldChange((field) => store.set({ field }));
+
+/** What a new field cleared, appended to the "Sample field loaded" toast (one toast at a time). */
+let fieldResetNote = '';
+
+onFieldChange((field, change) => {
+  if (change === 'edited') {
+    store.set({ field }); // same field, vertices moved: the screening entries stay
+    return;
+  }
+  // A new location (drawn, the sample loaded, or the field removed) starts a new screening of the place:
+  // the field walk, the on-site wind and the bulletin answer belonged to the old location.
+  const s = store.get();
+  const inputs = isMachineState(s.checklist) ? s.checklist.inputs : null;
+  const hadEntries = Boolean(inputs && (inputs.blt || inputs.fieldWalk || inputs.onsiteWind));
+  for (const action of fieldChangeActions()) dispatch(action);
+  resetChecklistDrafts('field');
+  // Observed water far from the new field belonged to the old one; water next to it is kept (it is water).
+  let observedWater = s.observedWater;
+  if (change === 'new' && field && observedWater.features.length > 0) {
+    const kept = waterNearField(observedWater.features, field, neededWaterFt(s));
+    if (kept.length !== observedWater.features.length) observedWater = { ...observedWater, features: kept };
+  }
+  const removed = s.observedWater.features.length - observedWater.features.length;
+  store.set({ field, observedWater });
+  const notes: string[] = [];
+  if (hadEntries) notes.push('The bulletin check, field walk and on-site wind were cleared: they were recorded for the previous field.');
+  if (removed > 0) notes.push(`${removed} observed water feature${removed === 1 ? '' : 's'} far from this field ${removed === 1 ? 'was' : 'were'} removed.`);
+  fieldResetNote = notes.join(' ');
+  if (fieldResetNote && change === 'new' && field && !field.properties?.sample) showToast(fieldResetNote);
+  if (fieldResetNote && change === 'removed') showToast(`Field removed. ${fieldResetNote}`);
+});
 onObservedWaterChange((fc) => store.set({ observedWater: fc as unknown as WaterCollection }));
 onBufferHover((id) => {
   view.set({ hoverId: id });
@@ -351,6 +475,17 @@ onBufferHover((id) => {
 
 let waterAbort: AbortController | null = null;
 let waterQueriedFt = 0;
+
+/**
+ * The sample field is backed by the dated demo cache, so a hung NHD request does not need its full
+ * 25 s / 15 s deadline there: after 6 s (one hedged NHD request at 4 s) the failed layer is filled from
+ * the cache, labelled "cached". Any other field keeps the full deadlines (it has no cache to fall back on).
+ */
+const SAMPLE_FIELD_LAYER_TIMEOUT_MS = 6_000;
+function sampleFieldTimeouts(field: AppState['field']): Partial<Record<MappedLayerId, number>> | undefined {
+  if (!field?.properties?.sample) return undefined;
+  return { nhd_flowline: SAMPLE_FIELD_LAYER_TIMEOUT_MS, nhd_waterbody: SAMPLE_FIELD_LAYER_TIMEOUT_MS, nwi_wetland: SAMPLE_FIELD_LAYER_TIMEOUT_MS };
+}
 
 function neededWaterFt(s: Readonly<AppState>): number {
   const distances = s.restrictions.filter((r) => r.match && r.kind === 'water_buffer' && (r.distanceFt ?? 0) > 0).map((r) => r.distanceFt!);
@@ -371,7 +506,7 @@ async function refreshWater(): Promise<void> {
   waterQueriedFt = needFt;
   store.set({ waterStatus: { state: 'loading' } });
   try {
-    const res = await fetchMappedWater(s.field, needFt, { signal: ctrl.signal });
+    const res = await fetchMappedWater(s.field, needFt, { signal: ctrl.signal, layerTimeoutsMs: sampleFieldTimeouts(s.field) });
     if (ctrl.signal.aborted) return;
     store.set({
       mappedWater: res.fc as WaterCollection,
@@ -513,7 +648,7 @@ function exportRecord(): void {
   const s = store.get();
   const v = view.get();
   // A prohibited method has no meaningful acreage: the record says so instead of showing the whole field.
-  const html = renderRecord({ ...s, buffers: v.buffers, area: v.buffers?.prohibited ? null : v.area });
+  const html = renderRecord({ ...s, buffers: v.buffers, area: v.buffers?.prohibited ? null : v.area, sample: currentSample });
   if (!openRecordWindow(html)) showToast('Pop-up blocked. Allow pop-ups for this site, then export again.', 'error');
 }
 
@@ -537,7 +672,7 @@ function flushRender(): void {
   const parts = new Set(dirty);
   dirty.clear();
   if (parts.has('header')) renderHeader(s, v, currentSample);
-  if (parts.has('restrictions')) renderRestrictions(byId('tabpanel-restrictions'), s, v, restrictionHandlers);
+  if (parts.has('restrictions')) renderRestrictions(byId('tabpanel-restrictions'), s, v, restrictionHandlers, currentSample);
   if (parts.has('restrictions') || parts.has('emphasis')) updateEmphasis(v);
   if (parts.has('readout')) renderReadout(byId('readout'), s, v, { onAddObserved: startObservedDraw });
   if (parts.has('water')) {
@@ -750,7 +885,7 @@ function initMapControls(): void {
   sampleBtn.addEventListener('click', () => {
     sampleBtn.disabled = true;
     loadSampleField()
-      .then(() => showToast('Sample field loaded: an illustrative outline near El Campo, TX — not a real farm record.'))
+      .then(() => showToast(`Sample field loaded: an illustrative outline near El Campo, TX — not a real farm record.${fieldResetNote ? ` ${fieldResetNote}` : ''}`))
       .catch((error: unknown) => showToast(`Couldn’t load the sample field: ${errorText(error)}`, 'error'))
       .finally(() => {
         sampleBtn.disabled = false;

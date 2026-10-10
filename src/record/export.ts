@@ -15,6 +15,8 @@ import {
   MITIGATION_MENU_URL,
   PALM_URL,
   scopeLabel,
+  screeningStatus,
+  summariseClauses,
   type ChecklistItem,
 } from '../checklist/machine';
 import {
@@ -59,7 +61,34 @@ export interface RecordInput
   buffers?: BufferSet | null; // from geo/buffers
   area?: AreaResult | null; // from geo/area
   now?: Date; // record time (defaults to the current instant, shown in America/Chicago)
+  /** The bundled sample label this file is (chosen, or an upload whose bytes match it), from manifest.json. */
+  sample?: RecordSampleLabel | null;
 }
+
+/** The manifest facts the record prints for a bundled sample label. */
+export interface RecordSampleLabel {
+  product: string;
+  epaRegNo: string;
+  sourceUrl?: string;
+  retrieved?: string;
+  /** Older label wording that is not presented as current (manifest `legacy`). */
+  legacy?: boolean;
+  legacyNote?: string;
+}
+
+/** Product name: the extracted one, else the sample manifest's, else the file name. */
+export function recordProduct(input: Pick<RecordInput, 'extractMeta' | 'labelFile' | 'sample'>): string {
+  return input.extractMeta?.product ?? input.sample?.product ?? input.labelFile?.name ?? 'No label loaded';
+}
+
+/** EPA Reg. No.: the extracted one, else the sample manifest's (said so), else null. */
+export function recordRegNo(input: Pick<RecordInput, 'extractMeta' | 'sample'>): { value: string; fromManifest: boolean } | null {
+  if (input.extractMeta?.epaRegNo) return { value: input.extractMeta.epaRegNo, fromManifest: false };
+  if (input.sample?.epaRegNo) return { value: input.sample.epaRegNo, fromManifest: true };
+  return null;
+}
+
+const MANIFEST_TAG = ' <span class="small">(from the bundled sample manifest, not extracted)</span>';
 
 // ---------- formatting ----------
 
@@ -401,32 +430,53 @@ function restrictionById(restrictions: readonly VerifiedRestriction[], id: strin
   return id ? restrictions.find((r) => r.id === id) : undefined;
 }
 
+function labelFileCell(input: RecordInput): string {
+  if (!input.labelFile) return '—';
+  const sample = input.sample;
+  let out = esc(input.labelFile.name);
+  if (input.labelFile.source === 'sample') out += ' <span class="tag">sample label (archived EPA PDF bundled with LabelLine)</span>';
+  else if (sample) out += ' <span class="tag">uploaded; same file as a bundled sample label</span>';
+  if (sample) {
+    const source = sample.sourceUrl ? `EPA PPLS: <a href="${esc(sample.sourceUrl)}">${esc(sample.sourceUrl)}</a>` : '';
+    const retrieved = sample.retrieved ? `retrieved ${esc(formatChicago(sample.retrieved))}` : '';
+    if (source || retrieved) out += `<br><span class="small">${[source, retrieved].filter(Boolean).join(', ')}</span>`;
+    if (sample.legacy) {
+      out += `<br><span class="flag">⚑ Older label wording, not current${sample.legacyNote ? `: ${esc(sample.legacyNote)}` : ''}</span>`;
+    }
+  }
+  return out;
+}
+
 function headerSection(input: RecordInput, now: Date): string {
   const meta = input.extractMeta;
-  const product = meta?.product ?? input.labelFile?.name ?? 'No label loaded';
-  const file = input.labelFile
-    ? `${esc(input.labelFile.name)}${input.labelFile.source === 'sample' ? ' <span class="tag">sample label (archived EPA PDF bundled with LabelLine)</span>' : ''}`
-    : '—';
+  const product = recordProduct(input);
+  const reg = recordRegNo(input);
+  const file = labelFileCell(input);
   let extraction = 'No extraction yet';
   if (meta && input.mode === 'replay') {
     extraction = `<span class="tag tag-replay">REPLAY</span> recorded Gemini output${meta.recordedAt ? ` from ${esc(formatChicago(meta.recordedAt))}` : ''} (${esc(meta.model)})`;
   } else if (meta) {
     extraction = `<span class="tag tag-live">LIVE</span> ${esc(meta.model)}, ${esc(Math.round(meta.latencyMs))} ms`;
   }
-  const complete = input.checklist.status === 'complete';
-  // The demo field carries properties.sample = true; it is labelled, never presented as a grower's field.
+  const status = screeningStatus(input.checklist);
+  // A clean complete keeps the record's own wording; a complete checklist with flags is never green.
+  const statusText = status.tone === 'ok' ? 'Screening checklist complete' : status.label;
+  // The demo field carries properties.sample; it is labelled, never presented as a grower's field.
   const isSample = Boolean((input.field?.properties as { sample?: unknown } | null | undefined)?.sample);
-  const fieldText = !input.field ? 'Not drawn' : isSample ? 'Drawn on the map <span class="tag">sample location</span>' : 'Drawn on the map';
+  const fieldText = !input.field ? 'Not drawn' : isSample ? 'Sample field loaded <span class="tag">illustrative sample location</span>' : 'Drawn on the map';
+  const flagList =
+    status.complete && status.flags.length > 0 ? `<ul class="record-flags">${status.flags.map((f) => `<li class="flag">⚑ ${esc(f)}</li>`).join('')}</ul>` : '';
 
   return `<header class="record-header">
   <div class="record-title">
     <h1>LabelLine screening record</h1>
-    <span class="status ${complete ? 'status-complete' : 'status-incomplete'}">${complete ? 'Screening checklist complete' : 'Screening incomplete'}</span>
+    <span class="status ${status.tone === 'ok' ? 'status-complete' : status.complete ? 'status-flagged' : 'status-incomplete'}">${esc(statusText)}</span>
   </div>
   <p class="record-note">Not a legal determination. Complete means every screening step was recorded, not that an application is permitted.</p>
+  ${flagList}
   <dl class="meta">
     <div><dt>Product</dt><dd>${esc(product)}</dd></div>
-    <div><dt>EPA Reg. No.</dt><dd>${esc(meta?.epaRegNo ?? 'Not extracted')}</dd></div>
+    <div><dt>EPA Reg. No.</dt><dd>${reg ? `${esc(reg.value)}${reg.fromManifest ? MANIFEST_TAG : ''}` : 'Not extracted'}</dd></div>
     <div><dt>Application method</dt><dd>${esc(METHOD_LABELS[input.method])}</dd></div>
     <div><dt>Crop</dt><dd>${esc(input.crop ?? 'Not set')}</dd></div>
     <div><dt>Record date (America/Chicago)</dt><dd>${esc(formatChicago(now))}</dd></div>
@@ -440,16 +490,27 @@ function headerSection(input: RecordInput, now: Date): string {
 function acreageSection(input: RecordInput): string {
   const { area, buffers } = input;
   const scope = scopeLabel(input.method, input.crop);
+  // Worded from which clause applies (restrictionId / prohibited), not from whether a buffer area exists:
+  // a clause can apply while no mapped or observed water lies within its distance of the field.
   let basis: string;
+  const source = buffers ? restrictionById(input.restrictions, buffers.restrictionId) : undefined;
+  const clauseRef = buffers?.restrictionId
+    ? source
+      ? `clause ${esc(source.id)} (PDF p. ${esc(source.page)})`
+      : `clause ${esc(buffers.restrictionId)}`
+    : 'a confirmed clause';
   if (!buffers) {
     basis = 'Buffers were not computed.';
-  } else if (!buffers.union) {
+  } else if (buffers.prohibited) {
+    basis = `None drawn: confirmed ${clauseRef} prohibits ${esc(scope)}.`;
+  } else if (!buffers.restrictionId) {
     basis = `No buffer drawn: no confirmed, verified water-buffer clause applies to ${esc(scope)}.`;
+  } else if (!buffers.union) {
+    basis = `${esc(buffers.distanceFt)} ft from ${clauseRef} applies to ${esc(scope)}; no mapped or observed water loaded so far lies within ${esc(
+      buffers.distanceFt,
+    )} ft of the field, so no buffer area was drawn.`;
   } else {
-    const source = restrictionById(input.restrictions, buffers.restrictionId);
-    basis = `${esc(buffers.distanceFt)} ft around mapped and observed water for ${esc(METHOD_LABELS[buffers.method])}${
-      source ? `, from clause ${esc(source.id)} (PDF p. ${esc(source.page)})` : buffers.restrictionId ? `, from clause ${esc(buffers.restrictionId)}` : ''
-    }.`;
+    basis = `${esc(buffers.distanceFt)} ft around mapped and observed water for ${esc(METHOD_LABELS[buffers.method])}, from ${clauseRef}.`;
   }
 
   // Only trust the checklist's clause summary when it was synced for the method and crop being recorded.
@@ -614,11 +675,18 @@ function windSection(input: RecordInput): string {
   const screen = wind.screen as WindScreenResult;
   const summary = summariseScreen(screen);
   const hasLimit = screen.limitMaxMph !== undefined || screen.limitMinMph !== undefined;
+  // The label states a wind-speed limit; none of the bundled labels states a numeric gust limit. The gust
+  // check against that speed is LabelLine's own conservative choice and is named as such.
+  const refs = summariseClauses(input.restrictions, input.method, input.crop).wind;
+  const cite = (ref: { id: string; page: number } | undefined): string =>
+    ref ? `label clause ${esc(ref.id)}, PDF p. ${esc(ref.page)}` : 'confirmed label clause';
   const limitText = hasLimit
     ? [
-        screen.limitMaxMph !== undefined ? `sustained above ${esc(screen.limitMaxMph)} mph` : '',
-        screen.limitMinMph !== undefined ? `sustained below ${esc(screen.limitMinMph)} mph` : '',
-        screen.limitGustMaxMph !== undefined ? `gusts above ${esc(screen.limitGustMaxMph)} mph` : '',
+        screen.limitMaxMph !== undefined ? `sustained above ${esc(screen.limitMaxMph)} mph (${cite(refs.maxRef)})` : '',
+        screen.limitMinMph !== undefined ? `sustained below ${esc(screen.limitMinMph)} mph (${cite(refs.minRef)})` : '',
+        screen.limitGustMaxMph !== undefined
+          ? `gusts above ${esc(screen.limitGustMaxMph)} mph (LabelLine&#39;s own conservative check against the label&#39;s wind-speed limit, not a gust limit printed on the label)`
+          : '',
       ]
         .filter(Boolean)
         .join('; ')
@@ -640,7 +708,7 @@ function windSection(input: RecordInput): string {
   <h2>Wind forecast screen</h2>
   <p>${
     hasLimit
-      ? `${summary.notOk} of ${summary.total} forecast hours${range} marked against the confirmed label limit (${limitText}).`
+      ? `${summary.notOk} of ${summary.total} forecast hours${range} marked: ${limitText}.`
       : `No confirmed label wind limit; ${summary.total} forecast hours${range} shown unscreened.`
   }</p>
   ${
@@ -664,9 +732,14 @@ function checklistSection(input: RecordInput): string {
       <td>${item.at ? esc(formatChicago(item.at)) : '—'}</td>
     </tr>`;
   }).join('');
-  const complete = input.checklist.status === 'complete';
+  const status = screeningStatus(input.checklist);
+  const heading = !status.complete
+    ? 'incomplete'
+    : status.flags.length > 0
+      ? `recorded with ${status.flags.length === 1 ? '1 flag' : `${status.flags.length} flags`}`
+      : 'complete';
   return `<section class="record-section">
-  <h2>Screening checklist — ${complete ? 'complete' : 'incomplete'}</h2>
+  <h2>Screening checklist — ${heading}</h2>
   <table class="checklist">
     <thead><tr><th>Step</th><th>Status</th><th>Recorded</th><th>Time (America/Chicago)</th></tr></thead>
     <tbody>${rows}</tbody>
@@ -675,14 +748,15 @@ function checklistSection(input: RecordInput): string {
 }
 
 function linksSection(input: RecordInput, now: Date): string {
-  const meta = input.extractMeta;
-  const prefill = bltPrefill(meta?.epaRegNo, input.field, now);
+  const reg = recordRegNo(input);
+  const prefill = bltPrefill(reg?.value, input.field, now);
   const appMonth =
     isMachineState(input.checklist) && input.checklist.context.applicationMonth
       ? parseIsoMonth(input.checklist.context.applicationMonth)?.label ?? prefill.month.label
       : prefill.month.label;
 
-  const buffer = input.buffers?.union ? restrictionById(input.restrictions, input.buffers.restrictionId) : undefined;
+  // The applicable label buffer, whether or not water lies within it (a buffer area needs water nearby).
+  const buffer = input.buffers && !input.buffers.prohibited ? restrictionById(input.restrictions, input.buffers.restrictionId) : undefined;
   const droplet = input.restrictions.filter(
     (r) => r.kind === 'droplet_size' && r.match && r.status === 'confirmed' && appliesTo(r, input.method, input.crop),
   );
@@ -692,7 +766,7 @@ function linksSection(input: RecordInput, now: Date): string {
   <h3><a href="${prefill.url}">Bulletins Live! Two</a></h3>
   <p class="small">A LabelLine best-practice step. Bulletins are enforceable when the label refers to them; the bulletin must match the application month.</p>
   <table class="compact"><tbody>
-    <tr><th>EPA Reg. No. to enter</th><td>${esc(prefill.regNo ?? 'Not extracted')}</td></tr>
+    <tr><th>EPA Reg. No. to enter</th><td>${prefill.regNo ? `${esc(prefill.regNo)}${reg?.fromManifest ? MANIFEST_TAG : ''}` : 'Not extracted'}</td></tr>
     <tr><th>Application month</th><td>${esc(appMonth)}</td></tr>
     <tr><th>Field centroid (lat, lon)</th><td>${esc(prefill.centroidText ?? 'No field drawn')}</td></tr>
   </tbody></table>
@@ -701,7 +775,11 @@ function linksSection(input: RecordInput, now: Date): string {
   <table class="compact"><tbody>
     <tr><th>Application method</th><td>${esc(METHOD_LABELS[input.method])}</td></tr>
     <tr><th>Label buffer for this method</th><td>${
-      buffer && input.buffers ? `${esc(input.buffers.distanceFt)} ft (clause ${esc(buffer.id)}, PDF p. ${esc(buffer.page)})` : 'None confirmed'
+      input.buffers?.prohibited
+        ? 'Method prohibited by a confirmed clause (see Acreage)'
+        : buffer && input.buffers
+          ? `${esc(input.buffers.distanceFt)} ft (clause ${esc(buffer.id)}, PDF p. ${esc(buffer.page)})`
+          : 'None confirmed'
     }</td></tr>
     <tr><th>Droplet-size clauses</th><td>${
       droplet.length > 0 ? droplet.map((r) => `<q>${esc(r.quote)}</q> (PDF p. ${esc(r.page)})`).join('<br>') : 'None confirmed'
@@ -715,7 +793,7 @@ function linksSection(input: RecordInput, now: Date): string {
 /** The full printable record as an HTML document string. */
 export function renderRecord(input: RecordInput): string {
   const now = input.now ?? new Date();
-  const product = input.extractMeta?.product ?? input.labelFile?.name ?? 'No label loaded';
+  const product = recordProduct(input);
   return `<!doctype html>
 <html lang="en">
 <head>

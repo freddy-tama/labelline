@@ -14,6 +14,7 @@ export interface Restriction {
   page: number;                   // page the quote is on (1-based)
   crops?: string[];               // crops this clause is limited to (e.g. ['rice']); absent = all crops
   prohibited?: boolean;           // true when the clause PROHIBITS the method (e.g. ULV on rice)
+  state?: string;                 // two-letter US state code when the clause applies only in that state (e.g. 'NY'); absent = every state
   note?: string;                  // model's short paraphrase / caveat / exemption
 }
 

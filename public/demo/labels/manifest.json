@@ -5,7 +5,8 @@
     "epaRegNo": "279-3313",
     "sourceUrl": "https://www3.epa.gov/pesticides/chem_search/ppls/000279-03313-20260630.pdf",
     "retrieved": "2026-10-11",
-    "note": "Ground 25 ft, non-ULV aerial 150 ft and ULV aerial 450 ft aquatic buffers (PDF p7); ULV aerial directions for cotton (PDF p9); ULV on corn is prohibited (PDF p10)."
+    "note": "Ground 25 ft, non-ULV aerial 150 ft and ULV aerial 450 ft aquatic buffers (PDF p7); ULV aerial directions for cotton (PDF p9); ULV on corn is prohibited (PDF p10).",
+    "pdfSha256": "42f1ff95af786b729dffafea542e06adbafc43cc4fddccbf00f57269e823a50d"
   },
   {
     "slug": "warrior2",
@@ -13,7 +14,8 @@
     "epaRegNo": "100-1295",
     "sourceUrl": "https://www3.epa.gov/pesticides/chem_search/ppls/000100-01295-20250703.pdf",
     "retrieved": "2026-10-11",
-    "note": "ULV is prohibited on rice (PDF p28) but allowed on cotton (PDF p33); New York 25 ft vegetated runoff strip (PDF p14)."
+    "note": "ULV is prohibited on rice (PDF p28) but allowed on cotton (PDF p33); New York 25 ft vegetated runoff strip (PDF p14).",
+    "pdfSha256": "dcb3decf4e9f62ecf9455c8bc375bcfe0bf09d9802ae987acaa3f27ce3301420"
   },
   {
     "slug": "mustangmaxx",
@@ -21,7 +23,8 @@
     "epaRegNo": "279-3426",
     "sourceUrl": "https://www3.epa.gov/pesticides/chem_search/ppls/000279-03426-20220816.pdf",
     "retrieved": "2026-10-11",
-    "note": "Rice fields are exempt from the vegetative filter strip on this label (PDF p7); 7-day floodwater hold on rice (PDF p31)."
+    "note": "Rice fields are exempt from the vegetative filter strip on this label (PDF p7); 7-day floodwater hold on rice (PDF p31).",
+    "pdfSha256": "71630dc79cbfdcb62ee0d41c724b90175c2957ef22bf9164c9843ed3cfaa137e"
   },
   {
     "slug": "asanaxl",
@@ -29,7 +32,8 @@
     "epaRegNo": "59639-209",
     "sourceUrl": "https://www3.epa.gov/pesticides/chem_search/ppls/059639-00209-20260414.pdf",
     "retrieved": "2026-10-11",
-    "note": "PPLS version dated 2026-04-14 (registration review mitigation amendment); aquatic buffers on PDF p9."
+    "note": "PPLS version dated 2026-04-14 (registration review mitigation amendment); aquatic buffers on PDF p9.",
+    "pdfSha256": "c13b9ecda34926631196c85cf6819966e342b8da440b7e5ac946e5525bf6fb5f"
   },
   {
     "slug": "upcyde25ec",
@@ -37,7 +41,10 @@
     "epaRegNo": "70506-20",
     "sourceUrl": "https://www3.epa.gov/pesticides/chem_search/ppls/070506-00020-20231122.pdf",
     "retrieved": "2026-10-11",
-    "note": "Legacy 2008-style drift language with a 10 ft filter strip (label Rev. 3/30/2023, PPLS notification 2023-11-22); the printed label itself reads \"10-fout\"."
+    "note": "Legacy 2008-style drift language with a 10 ft filter strip (label Rev. 3/30/2023, PPLS notification 2023-11-22); the printed label itself reads \"10-fout\".",
+    "pdfSha256": "5673270a1a32fd3ea42256b748f5639c0a396b92744aa22efaa413843c85774a",
+    "legacy": true,
+    "legacyNote": "Legacy 2008-style drift language (10 ft filter strip), unlike the newer drift wording on the other sample labels. Check EPA PPLS for the current version."
   },
   {
     "slug": "baythroidxl",
@@ -45,6 +52,9 @@
     "epaRegNo": "264-840",
     "sourceUrl": "https://www3.epa.gov/pesticides/chem_search/ppls/000264-00840-20191007.pdf",
     "retrieved": "2026-10-11",
-    "note": "legacy label language predating the 2020 beta-cyfluthrin interim decision; not presented as current"
+    "note": "legacy label language predating the 2020 beta-cyfluthrin interim decision; not presented as current",
+    "pdfSha256": "24ebcbeb35e6b4cdf7e246ebedd2b436d593d735c011829423bda90dd24074c2",
+    "legacy": true,
+    "legacyNote": "Archived PPLS version of 2019-10-07, with 10 ft buffer language from before the 2020 beta-cyfluthrin interim decision. Not presented as the current label; check EPA PPLS for the current version."
   }
 ]

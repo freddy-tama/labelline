@@ -13,6 +13,7 @@ import {
   MITIGATION_MENU_URL,
   PALM_URL,
   scopeLabel,
+  screeningStatus,
   summariseClauses,
   type ChecklistAction,
   type ChecklistItem,
@@ -60,6 +61,23 @@ export function labelChangeActions(): ChecklistAction[] {
 /** Drafts after a label change: label-scoped input is dropped, the field-walk checkboxes stay with the field. */
 export function draftsForNewLabel(current: Readonly<ChecklistDrafts>): ChecklistDrafts {
   return { ...emptyChecklistDrafts(), walked: current.walked, zero: current.zero };
+}
+
+/**
+ * Checklist items that belong to one field location. A new field (drawn, loaded or the old one removed;
+ * not a vertex edit) clears them: the field walk was for the old field, the on-site wind was measured
+ * there, and a Bulletins Live! Two answer ("no PULA") is specific to a location.
+ */
+export const FIELD_SCOPED_ITEMS: readonly UserItemId[] = ['blt_checked', 'field_walked', 'onsite_wind'];
+
+/** Reducer actions for a new field location. Mitigation credits stay with the label. */
+export function fieldChangeActions(): ChecklistAction[] {
+  return FIELD_SCOPED_ITEMS.map((item) => ({ type: 'clear', item }));
+}
+
+/** Drafts after a field change: bulletin, field-walk and wind input are dropped; the mitigation draft stays. */
+export function draftsForNewField(current: Readonly<ChecklistDrafts>): ChecklistDrafts {
+  return { ...emptyChecklistDrafts(), mitigationApplicable: current.mitigationApplicable, mitigationText: current.mitigationText };
 }
 
 function copyRow(label: string, value: string | null, key: string, handlers: ChecklistHandlers, missing: string): HTMLElement {
@@ -134,7 +152,8 @@ const now = () => new Date().toISOString();
 export function renderChecklist(container: HTMLElement, state: Readonly<AppState>, sample: SampleLabel | null, handlers: ChecklistHandlers): void {
   const items = state.checklist.items;
   const done = CHECKLIST_ITEM_ORDER.filter((id) => items[id].done).length;
-  const complete = state.checklist.status === 'complete';
+  // Green only when every item is recorded and nothing is flagged (screeningStatus in checklist/machine).
+  const screening = screeningStatus(state.checklist);
   const regNo = state.extractMeta?.epaRegNo ?? sample?.epaRegNo ?? null;
   const prefill = bltPrefill(regNo, state.field);
   const clauses = summariseClauses(state.restrictions, state.method, state.crop);
@@ -142,8 +161,11 @@ export function renderChecklist(container: HTMLElement, state: Readonly<AppState
 
   const head = h(
     'div',
-    { class: `ck-summary ${complete ? 'is-complete' : ''}` },
-    h('p', { class: 'ck-summary-title' }, complete ? 'Screening complete' : 'Screening incomplete', h('span', { class: 'ck-count' }, `${done} of ${CHECKLIST_ITEM_ORDER.length} recorded`)),
+    { class: `ck-summary ${screening.tone === 'ok' ? 'is-complete' : ''}` },
+    h('p', { class: 'ck-summary-title' }, screening.label, h('span', { class: 'ck-count' }, `${done} of ${CHECKLIST_ITEM_ORDER.length} recorded`)),
+    screening.complete && screening.flags.length > 0
+      ? h('ul', { class: 'ck-flags' }, ...screening.flags.map((f) => h('li', {}, icon('alert', 14), f)))
+      : null,
     h('p', { class: 'fine' }, 'Complete means every item is recorded. It is not a legal determination; the label and your judgment govern.'),
     h('button', { type: 'button', class: 'btn btn-sm btn-secondary', 'data-key': 'ck:export', onclick: handlers.onExport }, icon('print', 14), 'Export screening record'),
   );
@@ -371,7 +393,10 @@ export function renderChecklist(container: HTMLElement, state: Readonly<AppState
   replaceKeepingFocus(container, head, clausesItem, bltItem, walkItem, windItem, mitigationItem);
 }
 
-/** Clears unsent drafts: 'label' for a newly loaded label (field-walk input kept), 'all' for a full reset. */
-export function resetChecklistDrafts(scope: 'label' | 'all' = 'all'): void {
-  Object.assign(drafts, scope === 'label' ? draftsForNewLabel(drafts) : emptyChecklistDrafts());
+/**
+ * Clears unsent drafts: 'label' for a newly loaded label (field-walk input kept), 'field' for a new field
+ * location (mitigation input kept), 'all' for a full reset.
+ */
+export function resetChecklistDrafts(scope: 'label' | 'field' | 'all' = 'all'): void {
+  Object.assign(drafts, scope === 'label' ? draftsForNewLabel(drafts) : scope === 'field' ? draftsForNewField(drafts) : emptyChecklistDrafts());
 }

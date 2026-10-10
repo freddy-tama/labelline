@@ -55,10 +55,14 @@ function chart(screen: WindScreenResult): HTMLElement {
   return plot;
 }
 
+/**
+ * The hourly values for screen readers. The hiding class sits on a wrapping div: a <table> ignores the
+ * 1px box and overflow clipping, so a hidden 24-row table kept its full height and made the page scroll.
+ */
 function srTable(screen: WindScreenResult): HTMLElement {
-  return h(
+  return h('div', { class: 'sr-only', 'data-testid': 'wind-sr-table' }, h(
     'table',
-    { class: 'sr-only' },
+    {},
     h('caption', {}, 'Hourly wind forecast'),
     h('thead', {}, h('tr', {}, h('th', {}, 'Hour'), h('th', {}, 'Sustained mph'), h('th', {}, 'Gust mph'), h('th', {}, 'Screen'))),
     h(
@@ -68,7 +72,7 @@ function srTable(screen: WindScreenResult): HTMLElement {
         h('tr', {}, h('td', {}, formatHourLabel(x.time)), h('td', {}, String(x.speedMph)), h('td', {}, String(x.gustMph)), h('td', {}, !screen.screened ? 'not screened' : x.ok ? 'within limit' : (x.reasons ?? []).join('; '))),
       ),
     ),
-  );
+  ));
 }
 
 export function renderWind(container: HTMLElement, state: Readonly<AppState>, handlers: WindHandlers): void {
@@ -106,15 +110,17 @@ export function renderWind(container: HTMLElement, state: Readonly<AppState>, ha
       text = `No confirmed wind limit for ${scope} — hours shown, not screened.`;
     } else {
       const source = ref.maxRef ? ` (clause ${ref.maxRef.id}, p. ${ref.maxRef.page})` : ref.minRef ? ` (clause ${ref.minRef.id}, p. ${ref.minRef.page})` : '';
+      // The label gives a wind-speed limit, not a gust limit; checking gusts against it is LabelLine's own
+      // conservative choice and is said so (none of the bundled labels prints a numeric gust limit).
+      const gustLimit = screen.limitGustMaxMph ?? screen.limitMaxMph;
       if (sum.notOk === 0) {
-        text = `No forecast hour is outside the label limit${source}.`;
+        text = `No forecast hour is outside the label limit${source}${gustLimit !== undefined ? ' or LabelLine’s own gust check against it' : ''}.`;
       } else {
         const parts: string[] = [];
-        const gustLimit = screen.limitGustMaxMph ?? screen.limitMaxMph;
-        if (sum.sustainedOver) parts.push(`${sum.sustainedOver} with sustained wind above ${screen.limitMaxMph} mph`);
-        if (sum.gustOver) parts.push(`${sum.gustOver} with gusts above ${gustLimit} mph`);
-        if (sum.belowMin) parts.push(`${sum.belowMin} below the ${screen.limitMinMph} mph minimum`);
-        text = `${sum.notOk} of ${sum.total} forecast hours outside the label limit${source}: ${parts.join('; ')}.`;
+        if (sum.sustainedOver) parts.push(`${sum.sustainedOver} with sustained wind above the label’s ${screen.limitMaxMph} mph`);
+        if (sum.gustOver) parts.push(`${sum.gustOver} with gusts above ${gustLimit} mph (LabelLine’s own conservative check; the label sets a wind-speed limit, not a gust limit)`);
+        if (sum.belowMin) parts.push(`${sum.belowMin} below the label’s ${screen.limitMinMph} mph minimum`);
+        text = `${sum.notOk} of ${sum.total} forecast hours marked${source}: ${parts.join('; ')}.`;
       }
     }
     body = [

@@ -1,4 +1,5 @@
-// Scores one label's extracted restrictions against the hand-annotated answer key (eval/answer-key.json).
+// Scores one label's extracted restrictions against the annotated answer key (eval/answer-key.json; compiled
+// and annotated by AI research and build agents, machine-checked against the PDFs; see eval/ANNOTATION.md).
 // Pure: no I/O. eval/run-eval.ts reads the files, runs extraction + quote verification, and calls this.
 //
 // Matching (one-to-one, maximum matching): an extracted restriction matches a key item when
@@ -14,13 +15,18 @@
 //
 // Metrics (shape read by src/ui/evidence.ts):
 //   recall            key groups with a distance or wind number that were matched / all such groups
-//   precision         extracted restrictions with a distance or wind number that match a key group, or
-//                     whose quote was verified in the PDF with that number and does not contradict the
-//                     key / all extracted restrictions with a distance or wind number
+//   precision         extracted restrictions with a distance or wind number that match an answer-key
+//                     item (the rule above) / all extracted restrictions with a distance or wind number.
+//                     A clause that matches a key item another clause already took (the label prints it
+//                     twice, or the model listed it twice) is correct but counts once in recall. A clause
+//                     whose verified sentence is a key item's sentence but disagrees with it on kind,
+//                     method, crops or number is wrong. A clause found in the PDF whose sentence is not in
+//                     the key is NOT credited: it counts as not correct and is reported in `notInKey`.
 //   verifiedQuoteRate extracted restrictions whose quote was found in the PDF / all extracted
-// "Contradicts the key": the verified sentence is the sentence of a key item (within +-1 page) and
-// no key item for that sentence has the same kind and (when it has numbers) the same numbers, e.g.
-// a 10 ft "water_buffer" read from the aerial release-height sentence.
+//   notInKey          extracted distance/wind clauses found in the PDF but absent from the key (counted
+//                     as not correct in precision; listed in `extras` so a reader can judge them)
+//   unmatchedProhibitions extracted prohibitions (no number) that match no key prohibition (not scored
+//                     by any ratio, so this count makes them visible)
 
 import type { Method, RestrictionKind } from '../src/types';
 import { normaliseForMatch } from '../src/verify/quote';
@@ -104,8 +110,12 @@ export interface Extra extends Numbers {
   prohibited?: boolean;
   page: number;
   verified: boolean;
-  /** How precision counted it ("not counted" for an unmatched prohibition with no distance or wind number). */
-  counted: 'correct' | 'incorrect' | 'not counted';
+  /**
+   * How precision counted it: 'correct' (a repeat of a key item another clause already matched),
+   * 'incorrect', 'not in key' (found in the PDF but not in the answer key; counted as not correct), or
+   * 'not counted' (an unmatched prohibition with no distance or wind number; see unmatchedProhibitions).
+   */
+  counted: 'correct' | 'incorrect' | 'not in key' | 'not counted';
   why: string;
   quote: string;
 }
@@ -124,8 +134,10 @@ export interface LabelScore {
   verifiedQuoteRate: { verified: number; total: number };
   /** Key prohibitions (crop-specific ULV bans) matched by an extracted prohibition. */
   prohibitions: { found: number; total: number };
-  /** Precision counting only matches to the key (no credit for verified clauses outside the key). */
-  keyMatchedPrecision: { correct: number; total: number };
+  /** Extracted distance/wind clauses found in the PDF whose sentence is not in the key (not credited in precision). */
+  notInKey: number;
+  /** Extracted prohibitions without a number that match no key prohibition (no ratio scores them). */
+  unmatchedProhibitions: number;
   extracted: number;
   misses: Miss[];
   extras: Extra[];
@@ -318,11 +330,25 @@ export function keyItemsForSentence(r: ScoredRestriction, prepared: readonly Pre
     .map((p) => p.item);
 }
 
-/** The key items for this sentence all disagree with `r` on kind, or on numbers they state. */
-export function contradictsKey(r: ScoredRestriction, sentenceItems: readonly AnnotatedItem[]): AnnotatedItem | null {
+/** The fields on which `r` disagrees with key item `k`: kind, method (outside acceptMethods), crops, numbers. */
+export function disagreements(k: AnnotatedItem, r: ScoredRestriction): string[] {
+  const fields: string[] = [];
+  if (k.kind !== r.kind) fields.push('kind');
+  if (!methodAccepted(k, r.method)) fields.push('method');
+  if (!cropsCompatible(k.crops, r.crops)) fields.push('crops');
+  if (isBearing(k) ? !numbersEqual(k, r) : isBearing(r)) fields.push('numbers');
+  return fields;
+}
+
+/**
+ * The key items for this sentence all disagree with `r` on kind, method, crops or numbers. Returns the
+ * closest one with the fields it disagrees on, or null when some key item for the sentence agrees (or
+ * the sentence has no key item).
+ */
+export function contradictsKey(r: ScoredRestriction, sentenceItems: readonly AnnotatedItem[]): { item: AnnotatedItem; fields: string[] } | null {
   if (sentenceItems.length === 0) return null;
-  const agrees = (k: AnnotatedItem) => k.kind === r.kind && (!isBearing(k) || numbersEqual(k, r));
-  return sentenceItems.some(agrees) ? null : sentenceItems[0];
+  const ranked = sentenceItems.map((item) => ({ item, fields: disagreements(item, r) })).sort((a, b) => a.fields.length - b.fields.length);
+  return ranked[0].fields.length === 0 ? null : ranked[0];
 }
 
 const pickNumbers = (x: Numbers): Numbers => {
@@ -371,9 +397,11 @@ export function scoreLabel(keyItems: readonly AnnotatedItem[], restrictions: rea
   const prepared: PreparedKeyItem[] = keyItems.map((item) => ({ item, norm: normaliseForMatch(item.q) }));
 
   let correct = 0;
-  let keyMatched = 0;
   let bearingTotal = 0;
+  let notInKey = 0;
+  let unmatchedProhibitions = 0;
   const extras: Extra[] = [];
+  const describeKey = (k: AnnotatedItem) => `${k.cat} (${k.kind}, ${k.method}${k.crops?.length ? `, crops ${k.crops.join(', ')}` : ''}, ${describeNumbers(k)}, p${k.pdf_page})`;
   restrictions.forEach((r, j) => {
     const bearing = isBearing(r);
     const matched = matchedRestriction.has(j);
@@ -381,7 +409,6 @@ export function scoreLabel(keyItems: readonly AnnotatedItem[], restrictions: rea
       bearingTotal++;
       if (matched) {
         correct++;
-        keyMatched++;
         return;
       }
     } else if (matched || r.prohibited !== true) {
@@ -399,6 +426,7 @@ export function scoreLabel(keyItems: readonly AnnotatedItem[], restrictions: rea
       quote: clip(r.anchor ?? r.quote),
     };
     if (!bearing) {
+      unmatchedProhibitions++;
       const sameSentence = keyItemsForSentence(r, prepared);
       const why = r.match
         ? sameSentence.length
@@ -418,17 +446,32 @@ export function scoreLabel(keyItems: readonly AnnotatedItem[], restrictions: rea
       extras.push({
         ...base,
         counted: 'incorrect',
-        why: `verified sentence is key item ${conflict.cat} (${conflict.kind}, ${describeNumbers(conflict)}), which disagrees on ${conflict.kind !== r.kind ? 'kind' : 'numbers'}`,
+        why: `verified sentence is key item ${describeKey(conflict.item)}, which disagrees on ${conflict.fields.join(', ')}`,
       });
       return;
     }
-    correct++;
-    const why = sentenceItems.length
-      ? `quote verified in the PDF with ${describeNumbers(r)}; same sentence as key item ${sentenceItems
-          .map((k) => `${k.cat} (${k.method}${k.crops?.length ? `, crops ${k.crops.join(', ')}` : ''}, p${k.pdf_page})`)
-          .join(', ')} but not matched to it (method, crops or page differ, or another restriction took it)`
-      : `quote verified in the PDF with ${describeNumbers(r)}; no matching answer-key item`;
-    extras.push({ ...base, counted: 'correct', why });
+    // Not taken by the one-to-one matching, but it fits a key item: the label prints the clause twice, or
+    // the model listed it twice. Correct information, counted once in recall.
+    const repeatOf = keyItems.find((k) => itemMatches(k, r));
+    if (repeatOf) {
+      correct++;
+      extras.push({ ...base, counted: 'correct', why: `repeats key item ${describeKey(repeatOf)}, which another extracted clause already matched; counted once in recall` });
+      return;
+    }
+    if (sentenceItems.length) {
+      extras.push({
+        ...base,
+        counted: 'incorrect',
+        why: `verified sentence is key item ${sentenceItems.map(describeKey).join(', ')}, but this clause does not match it (prohibition or page differ)`,
+      });
+      return;
+    }
+    notInKey++;
+    extras.push({
+      ...base,
+      counted: 'not in key',
+      why: `quote found in the PDF with ${describeNumbers(r)}, but its sentence is not in the answer key; not credited in precision`,
+    });
   });
 
   const misses: Miss[] = [];
@@ -462,7 +505,8 @@ export function scoreLabel(keyItems: readonly AnnotatedItem[], restrictions: rea
     precision: { correct, total: bearingTotal },
     verifiedQuoteRate: { verified: restrictions.filter((r) => r.match !== null).length, total: restrictions.length },
     prohibitions: { found: prohibitedFound, total: prohibitedGroups.length },
-    keyMatchedPrecision: { correct: keyMatched, total: bearingTotal },
+    notInKey,
+    unmatchedProhibitions,
     extracted: restrictions.length,
     misses,
     extras,
@@ -474,7 +518,8 @@ export interface Overall {
   precision: { correct: number; total: number };
   verifiedQuoteRate: { verified: number; total: number };
   prohibitions: { found: number; total: number };
-  keyMatchedPrecision: { correct: number; total: number };
+  notInKey: number;
+  unmatchedProhibitions: number;
 }
 
 /** Sums of the per-label counts (micro-averages). */
@@ -485,7 +530,8 @@ export function summarise(labels: readonly LabelScore[]): Overall {
     precision: { correct: total((l) => l.precision.correct), total: total((l) => l.precision.total) },
     verifiedQuoteRate: { verified: total((l) => l.verifiedQuoteRate.verified), total: total((l) => l.verifiedQuoteRate.total) },
     prohibitions: { found: total((l) => l.prohibitions.found), total: total((l) => l.prohibitions.total) },
-    keyMatchedPrecision: { correct: total((l) => l.keyMatchedPrecision.correct), total: total((l) => l.keyMatchedPrecision.total) },
+    notInKey: total((l) => l.notInKey),
+    unmatchedProhibitions: total((l) => l.unmatchedProhibitions),
   };
 }
 
@@ -495,8 +541,9 @@ export const SCORING_RULES = {
     'one-to-one maximum matching; same kind, same method (or one of the key item acceptMethods), compatible crops (both absent, or sharing a crop), equal distanceFt / windMinMph / windMaxMph, key prohibitions only by extracted prohibitions, page within +-1 of the key pdf_page (verified page, else claimed page); key items with identical kind, method, crops, numbers, prohibited flag and page count once',
   recall: 'answer-key restrictions with a distance or wind number that were matched / all of them',
   precision:
-    'extracted restrictions with a distance or wind number that match the key, or whose quote was verified in the PDF with that number without contradicting the key item for that sentence / all extracted restrictions with a distance or wind number',
+    'extracted restrictions with a distance or wind number that match an answer-key item by the match rule (a repeat of an already matched key item counts as correct) / all extracted restrictions with a distance or wind number. A clause whose sentence is a key sentence but whose kind, method, crops or number disagree is wrong; a clause found in the PDF whose sentence is not in the key is not credited (see notInKey)',
   verifiedQuoteRate: 'extracted restrictions whose quote was found in the PDF text layer (findQuote) / all extracted restrictions',
   prohibitions: 'answer-key crop prohibitions matched by an extracted prohibition / key prohibitions (only the BUILD_SPEC-named ones are keyed; see eval/ANNOTATION.md)',
-  keyMatchedPrecision: 'like precision, but only matches to the answer key count',
+  notInKey: 'extracted distance or wind clauses found in the PDF whose sentence is not in the answer key; counted as not correct in precision and listed in extras',
+  unmatchedProhibitions: 'extracted prohibitions without a number that match no key prohibition; no ratio scores them, so they are counted here and listed in extras',
 } as const;

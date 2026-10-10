@@ -6,7 +6,7 @@
       "properties": {
         "label": "Sample field (illustrative), Wharton County, TX",
         "sample": "el-campo",
-        "note": "Outline traced by hand from USGS NAIP imagery along the Tres Palacios River south-east of El Campo. Not a real farm record."
+        "note": "Outline traced by a LabelLine build agent from USGS NAIP imagery along the Tres Palacios River south-east of El Campo. Not a real farm record."
       },
       "geometry": {
         "type": "Polygon",

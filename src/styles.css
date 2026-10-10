@@ -138,6 +138,8 @@ a {
   outline-offset: 2px;
 }
 
+/* Use on a block or inline element, never on a <table>: a table ignores width/height and overflow,
+   keeps its full height and stretches the page (wrap the table in an .sr-only div instead). */
 .sr-only {
   position: absolute !important;
   width: 1px;
@@ -148,6 +150,16 @@ a {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* The three-panel desktop shell is fixed to the viewport: the page itself never scrolls (each panel
+   scrolls inside), so a wheel over the header or wind strip cannot move the app. The stacked phone
+   layout keeps normal page scroll. */
+@media (min-width: 1101px) {
+  html,
+  body {
+    overflow: hidden;
+  }
 }
 
 .skip-link {
@@ -676,6 +688,23 @@ a {
 .sample-select {
   flex: 1 1 auto;
   max-width: 340px;
+}
+
+/* Under the label controls: an upload recognised as a bundled sample, or older (legacy) label wording. */
+.label-notice {
+  flex: none;
+  padding: 6px var(--space-3) 6px var(--space-4);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+.label-notice.is-warn {
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+  font-weight: 600;
 }
 
 .pdf-host {

@@ -14,6 +14,11 @@ export interface SampleLabel {
   sourceUrl: string;
   retrieved: string;
   note?: string;
+  /** Older label wording, shown with an "Older label wording, not current" notice (manifest.json). */
+  legacy?: boolean;
+  legacyNote?: string;
+  /** SHA-256 of the bundled PDF, so an uploaded copy is recognised as this sample. */
+  pdfSha256?: string;
 }
 
 /**
@@ -30,7 +35,7 @@ export type ExtractionPhase =
   | { phase: 'scanned' }
   | { phase: 'extracting_live'; startedAt: number; replayAvailable: boolean }
   | { phase: 'loading_replay'; liveError?: string }
-  | { phase: 'done'; liveError?: string; dropped: number }
+  | { phase: 'done'; liveError?: string; dropped: number; kept?: boolean } // kept: a re-run failed; the earlier result is back
   | { phase: 'error'; message: string; replayAvailable: boolean; pdfError?: boolean };
 
 export interface ViewState {

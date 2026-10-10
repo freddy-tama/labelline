@@ -107,6 +107,17 @@ a {
   color: var(--bad);
 }
 
+/* Every step recorded, but with flags (e.g. wind over the label limit): never the green "complete". */
+.status-flagged {
+  color: var(--flag);
+}
+
+.record-flags {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+}
+
 .meta {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

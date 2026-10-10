@@ -8,6 +8,7 @@
 // order, so page and quote come first to anchor the rest of each item.
 
 import type { Method, Restriction, RestrictionKind } from '../src/types';
+import { normaliseState } from '../src/extract/stateScope.js';
 
 export const METHODS: readonly Method[] = ['ground', 'aerial', 'aerial_ulv', 'airblast', 'chemigation', 'any'];
 export const KINDS: readonly RestrictionKind[] = [
@@ -77,6 +78,10 @@ export function extractionResponseSchema(anchorWords: number = DEFAULT_ANCHOR_WO
             prohibited: {
               type: 'boolean',
               description: 'true only when the clause prohibits the method (e.g. "Do not apply as an ultra-low volume (ULV) spray" for rice).',
+            },
+            state: {
+              type: 'string',
+              description: 'Two-letter US state code (e.g. "NY") when the clause applies only in one state ("In New York State ..."). Omit when it applies in every state.',
             },
             distanceFt: {
               type: 'number',
@@ -173,6 +178,14 @@ export function validateItem(raw: unknown): ItemResult {
   if (!absent(raw.prohibited)) {
     if (typeof raw.prohibited !== 'boolean') return { ok: false, reason: 'prohibited is not a boolean' };
     if (raw.prohibited) item.prohibited = true;
+  }
+
+  // A state scope the validator cannot read is reported but never guessed; the client still detects
+  // a state named in the verified sentence (src/extract/stateScope.ts).
+  if (!absent(raw.state) && !(typeof raw.state === 'string' && raw.state.trim() === '')) {
+    const state = normaliseState(raw.state);
+    if (state) item.state = state;
+    else warnings.push(`state ignored (not a US state: ${JSON.stringify(raw.state)})`);
   }
 
   // Free-text fields: a wrong type loses the field, not the restriction.

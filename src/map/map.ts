@@ -117,7 +117,12 @@ interface MapState {
 }
 
 let state: MapState | null = null;
-const fieldListeners = new Set<(field: FieldFeature | null) => void>();
+/**
+ * How the field changed: 'new' (drawn with the field tool or the sample loaded: a new location),
+ * 'edited' (vertices moved: the same field) or 'removed'.
+ */
+export type FieldChange = 'new' | 'edited' | 'removed';
+const fieldListeners = new Set<(field: FieldFeature | null, change: FieldChange) => void>();
 const observedListeners = new Set<(fc: ObservedWaterCollection) => void>();
 const bufferHoverListeners = new Set<(restrictionId: string | null) => void>();
 let observedCounter = 0;
@@ -251,8 +256,8 @@ function renderOutside(s: MapState): void {
 
 // ---------- change reporting ----------
 
-function emitField(s: MapState): void {
-  for (const listener of [...fieldListeners]) listener(s.field);
+function emitField(s: MapState, change: FieldChange): void {
+  for (const listener of [...fieldListeners]) listener(s.field, change);
 }
 
 function emitObserved(s: MapState): void {
@@ -276,7 +281,7 @@ function onFieldEdited(s: MapState, layer: L.Layer): void {
   const next = asFieldFeature(featureFromLayer(layer), s.field?.properties ?? { label: 'Drawn field' });
   if (!next) return;
   s.field = next; // no re-render: the edited layer already shows this geometry
-  emitField(s);
+  emitField(s, 'edited');
 }
 
 function onObservedEdited(s: MapState, layer: L.Layer): void {
@@ -308,7 +313,7 @@ function handleCreate(s: MapState, shape: string, layer: L.Layer): void {
     if (!field) return;
     s.field = field;
     renderField(s);
-    emitField(s);
+    emitField(s, 'new');
     return;
   }
 
@@ -507,7 +512,7 @@ export function initMap(el: HTMLElement, options: MapInitOptions = {}): L.Map {
     event.layer.on('pm:remove', () => {
       s.field = null;
       renderField(s);
-      emitField(s);
+      emitField(s, 'removed');
     });
   });
   bufferLayer.on('mouseover', (event: L.LeafletMouseEvent) => {
@@ -543,7 +548,7 @@ export function setField(field: FieldFeature | null): void {
   renderField(s);
 }
 
-export function onFieldChange(listener: (field: FieldFeature | null) => void): () => void {
+export function onFieldChange(listener: (field: FieldFeature | null, change: FieldChange) => void): () => void {
   fieldListeners.add(listener);
   return () => fieldListeners.delete(listener);
 }
@@ -647,7 +652,7 @@ export async function loadSampleField(url: string = SAMPLE_FIELD_URL): Promise<F
   if (!field) throw new Error('The sample file has no field polygon.');
   s.field = field;
   renderField(s);
-  emitField(s);
+  emitField(s, 'new');
   flyToField(field);
   return field;
 }
