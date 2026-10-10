@@ -11,6 +11,7 @@ import type {
   WaterSource,
   WindScreen,
 } from './types';
+import { initialChecklist } from './checklist/machine';
 import type { LayerFetchReport } from './map/water';
 
 export type Listener<T> = (state: Readonly<T>, prev: Readonly<T>, changed: ReadonlyArray<keyof T>) => void;
@@ -126,7 +127,7 @@ export function initialAppState(): AppState {
     mappedWater: null,
     waterStatus: { state: 'idle' },
     wind: { state: 'idle', screen: null },
-    checklist: emptyChecklist(),
+    checklist: initialChecklist(), // checklist/machine state: same items as emptyChecklist(), plus hints from the first render
     mode: 'live',
     extractMeta: null,
   };
