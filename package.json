@@ -14,7 +14,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "eval": "tsx eval/run-eval.ts"
+    "eval": "tsx eval/run-eval.ts",
+    "record": "tsx scripts/record-replay.ts"
   },
   "dependencies": {
     "@geoman-io/leaflet-geoman-free": "^2.20.2",
