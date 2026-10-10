@@ -11,6 +11,7 @@ import type {
   WaterSource,
   WindScreen,
 } from './types';
+import type { LayerFetchReport } from './map/water';
 
 export type Listener<T> = (state: Readonly<T>, prev: Readonly<T>, changed: ReadonlyArray<keyof T>) => void;
 export type Patch<T> = Partial<T> | ((state: Readonly<T>) => Partial<T>);
@@ -56,9 +57,9 @@ export interface LabelFile {
   blob: Blob;
 }
 
-/** GeoJSON feature carrying a water source tag, per the types.ts contract. */
-export type WaterFeature = GeoJSON.Feature<GeoJSON.Geometry, { source: WaterSource; name?: string }>;
-export type WaterCollection = GeoJSON.FeatureCollection<GeoJSON.Geometry, { source: WaterSource; name?: string }>;
+/** GeoJSON feature carrying a water source tag, per the types.ts contract (type/code: NHD ftype/fcode or NWI attribute). */
+export type WaterFeature = GeoJSON.Feature<GeoJSON.Geometry, { source: WaterSource; name?: string; type?: string; code?: string }>;
+export type WaterCollection = GeoJSON.FeatureCollection<GeoJSON.Geometry, { source: WaterSource; name?: string; type?: string; code?: string }>;
 
 /**
  * Mapped-water fetch status. A failure is never "no water":
@@ -70,6 +71,8 @@ export interface WaterStatus {
   state: 'idle' | 'loading' | 'live' | 'cached' | 'unavailable';
   retrievedAt?: string;
   message?: string;
+  notes?: string[]; // disclosures and failed-layer notes from map/water fetchMappedWater()
+  sources?: LayerFetchReport[]; // per-layer fetch report (ok, featureCount, pages, error)
 }
 
 export interface WindState {

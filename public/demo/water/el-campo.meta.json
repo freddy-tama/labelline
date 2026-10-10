@@ -1,0 +1,139 @@
+{
+  "description": "Cached USGS NHD + USFWS NWI response for the LabelLine sample field (illustrative), Wharton County, TX. Produced by src/map/water.ts fetchMappedWater() making real requests; used only when the live request for the sample field fails, and labelled \"cached\" with this retrieval date. Each feature is unmodified service geometry plus properties.source/name/type/code.",
+  "retrievedAt": "2026-10-10T18:27:33.171Z",
+  "query": {
+    "field": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            -96.247787,
+            29.158326
+          ],
+          [
+            -96.247766,
+            29.151337
+          ],
+          [
+            -96.241243,
+            29.151374
+          ],
+          [
+            -96.241339,
+            29.151768
+          ],
+          [
+            -96.241554,
+            29.152236
+          ],
+          [
+            -96.241822,
+            29.152798
+          ],
+          [
+            -96.241983,
+            29.153361
+          ],
+          [
+            -96.241951,
+            29.153923
+          ],
+          [
+            -96.241812,
+            29.154485
+          ],
+          [
+            -96.241629,
+            29.155047
+          ],
+          [
+            -96.241436,
+            29.155609
+          ],
+          [
+            -96.241264,
+            29.156218
+          ],
+          [
+            -96.24105,
+            29.156968
+          ],
+          [
+            -96.240867,
+            29.157811
+          ],
+          [
+            -96.2409,
+            29.158345
+          ],
+          [
+            -96.247787,
+            29.158326
+          ]
+        ]
+      ]
+    },
+    "maxBufferFt": 450,
+    "distanceM": 164.02
+  },
+  "urls": [
+    "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=ftype+NOT+IN+%28420%2C428%29&geometry=%7B%22rings%22%3A%5B%5B%5B-96.247787%2C29.158326%5D%2C%5B-96.2409%2C29.158345%5D%2C%5B-96.240867%2C29.157811%5D%2C%5B-96.24105%2C29.156968%5D%2C%5B-96.241264%2C29.156218%5D%2C%5B-96.241436%2C29.155609%5D%2C%5B-96.241629%2C29.155047%5D%2C%5B-96.241812%2C29.154485%5D%2C%5B-96.241951%2C29.153923%5D%2C%5B-96.241983%2C29.153361%5D%2C%5B-96.241822%2C29.152798%5D%2C%5B-96.241554%2C29.152236%5D%2C%5B-96.241339%2C29.151768%5D%2C%5B-96.241243%2C29.151374%5D%2C%5B-96.247766%2C29.151337%5D%2C%5B-96.247787%2C29.158326%5D%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPolygon&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=164.02&units=esriSRUnit_Meter&outFields=OBJECTID%2Cgnis_name%2Cftype%2Cfcode&returnGeometry=true&outSR=4326&geometryPrecision=6&orderByFields=OBJECTID&resultOffset=0&resultRecordCount=2000&f=geojson",
+    "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/12/query?where=1%3D1&geometry=%7B%22rings%22%3A%5B%5B%5B-96.247787%2C29.158326%5D%2C%5B-96.2409%2C29.158345%5D%2C%5B-96.240867%2C29.157811%5D%2C%5B-96.24105%2C29.156968%5D%2C%5B-96.241264%2C29.156218%5D%2C%5B-96.241436%2C29.155609%5D%2C%5B-96.241629%2C29.155047%5D%2C%5B-96.241812%2C29.154485%5D%2C%5B-96.241951%2C29.153923%5D%2C%5B-96.241983%2C29.153361%5D%2C%5B-96.241822%2C29.152798%5D%2C%5B-96.241554%2C29.152236%5D%2C%5B-96.241339%2C29.151768%5D%2C%5B-96.241243%2C29.151374%5D%2C%5B-96.247766%2C29.151337%5D%2C%5B-96.247787%2C29.158326%5D%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPolygon&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=164.02&units=esriSRUnit_Meter&outFields=OBJECTID%2CGNIS_NAME%2CFTYPE%2CFCODE%2CAREASQKM&returnGeometry=true&outSR=4326&geometryPrecision=6&orderByFields=OBJECTID&resultOffset=0&resultRecordCount=2000&f=geojson",
+    "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=%7B%22rings%22%3A%5B%5B%5B-96.247787%2C29.158326%5D%2C%5B-96.2409%2C29.158345%5D%2C%5B-96.240867%2C29.157811%5D%2C%5B-96.24105%2C29.156968%5D%2C%5B-96.241264%2C29.156218%5D%2C%5B-96.241436%2C29.155609%5D%2C%5B-96.241629%2C29.155047%5D%2C%5B-96.241812%2C29.154485%5D%2C%5B-96.241951%2C29.153923%5D%2C%5B-96.241983%2C29.153361%5D%2C%5B-96.241822%2C29.152798%5D%2C%5B-96.241554%2C29.152236%5D%2C%5B-96.241339%2C29.151768%5D%2C%5B-96.241243%2C29.151374%5D%2C%5B-96.247766%2C29.151337%5D%2C%5B-96.247787%2C29.158326%5D%5D%5D%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPolygon&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=164.02&units=esriSRUnit_Meter&outFields=OBJECTID%2CATTRIBUTE%2CWETLAND_TYPE%2CACRES&returnGeometry=true&outSR=4326&geometryPrecision=6&orderByFields=OBJECTID&resultOffset=0&resultRecordCount=500&f=geojson&maxAllowableOffset=0.00002"
+  ],
+  "requestMethod": "POST application/x-www-form-urlencoded (the urls above show the same parameters as a query string)",
+  "featureCounts": {
+    "nhd_flowline": 6,
+    "nhd_waterbody": 1,
+    "nwi_wetland": 8
+  },
+  "pages": {
+    "nhd_flowline": 1,
+    "nhd_waterbody": 1,
+    "nwi_wetland": 1
+  },
+  "responses": [
+    {
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query",
+      "httpStatus": 200,
+      "ms": 1450,
+      "bytes": 71075
+    },
+    {
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query",
+      "httpStatus": 200,
+      "ms": 2270,
+      "bytes": 6115
+    },
+    {
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/12/query",
+      "httpStatus": 200,
+      "ms": 2328,
+      "bytes": 576
+    }
+  ],
+  "nwiImagery": {
+    "source": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Data_Source/MapServer/3/query (point at the field centre)",
+    "projectName": "Pierce",
+    "imageYear": 1992,
+    "imageDate": "11/92, 12/92",
+    "imageScale": "1:65K",
+    "sourceType": "CIR"
+  },
+  "disclosures": [
+    "USGS NHD was retired on October 1, 2023: it is still served but no longer maintained.",
+    "NWI wetlands here were mapped from 1992 imagery (11/92, 12/92, CIR).",
+    "NWI excludes farmed wetlands by policy and is not a jurisdictional determination.",
+    "Mapped water is incomplete; the applicator must add observed water."
+  ],
+  "appDisclosures": [
+    "Mapped water is incomplete. Add any pond, ditch or canal you see on site as observed water.",
+    "USGS NHD was retired in October 2023: still served, no longer maintained.",
+    "NWI wetland mapping can be decades old: at the El Campo sample area it comes from 1992 imagery.",
+    "NWI excludes farmed wetlands by policy, and it is not a jurisdictional determination."
+  ],
+  "credits": [
+    "U.S. Geological Survey",
+    "U.S. Fish and Wildlife Service, National Wetlands Inventory"
+  ]
+}
