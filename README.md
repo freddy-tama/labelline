@@ -2,7 +2,7 @@
 
 **LabelLine turns the water-buffer sentences in a pesticide label PDF into buffers drawn on your own field, and every buffer traces back to the sentence it highlights on the label page.**
 
-- **Hosted demo:** (link added at submission)
+- **Hosted demo:** https://labelline-app.vercel.app
 - **Video:** (link added at submission)
 
 Under federal pesticide law, applicators must follow the label, and how far they must stay from water depends on how the product is applied. A 20-plus-page label might say 25 ft for ground rigs, 150 ft for conventional aerial spraying and 450 ft for ultra-low-volume (ULV) aerial spraying. LabelLine is a screening aid for the commercial applicator who has to turn those sentences into distances on a real field before spraying.
@@ -90,6 +90,8 @@ Built during CodeRED: Orion (CougarCS, University of Houston) for the Environmen
 **Timeline:** Planning, research and the build spec (hackathon/) were written before the hacking window; all application code was written from 2026-10-10 1:00 PM CDT.
 
 The first commit is from 2026-10-10 at 1:12 PM CDT. [`hackathon/LOG.md`](hackathon/LOG.md) records each build cycle with its evidence.
+
+**AI assistance:** LabelLine was built by one university student working with AI coding agents. Claude (Anthropic), running as Claude Code agents, wrote most of the code, tests, answer-key annotations and documentation, and the idea was picked in a brainstorming round between Claude and GPT models. The student directed the work and owns the keys, accounts and publishing decisions. Gemini runs inside the product.
 
 ## Run it locally
 
