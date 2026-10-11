@@ -49,13 +49,11 @@ export function extractionResponseSchema(anchorWords: number = DEFAULT_ANCHOR_WO
       epaRegNo: { type: 'string', description: 'EPA Reg. No. as printed, digits and hyphens only, e.g. "279-3313".' },
       restrictions: {
         type: 'array',
-        maxItems: MAX_RESTRICTIONS,
         items: {
           type: 'object',
           properties: {
             page: {
               type: 'integer',
-              minimum: 1,
               description:
                 '1-based index of the page inside this PDF file where the quote is printed, counting every page from the first page of the file (including EPA cover letters). Not the printed page number.',
             },
@@ -85,12 +83,11 @@ export function extractionResponseSchema(anchorWords: number = DEFAULT_ANCHOR_WO
             },
             distanceFt: {
               type: 'number',
-              minimum: 0,
               description: 'water_buffer / filter_strip only: the horizontal distance in feet exactly as printed.',
             },
             protects: { type: 'string', description: 'What the distance protects, e.g. "aquatic habitats".' },
-            windMinMph: { type: 'number', minimum: 0, description: 'wind_limit only: lowest allowed wind speed in mph, if stated.' },
-            windMaxMph: { type: 'number', minimum: 0, description: 'wind_limit only: highest allowed wind speed in mph, if stated.' },
+            windMinMph: { type: 'number', description: 'wind_limit only: lowest allowed wind speed in mph, if stated.' },
+            windMaxMph: { type: 'number', description: 'wind_limit only: highest allowed wind speed in mph, if stated.' },
             note: {
               type: 'string',
               description: 'Short caveat: exemptions, reductions, conditions, state-specific scope, or other numeric limits (heights, boom length, volumes).',

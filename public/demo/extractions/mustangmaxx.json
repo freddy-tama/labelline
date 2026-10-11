@@ -1,0 +1,291 @@
+{
+  "restrictions": [
+    {
+      "id": "r1",
+      "kind": "other",
+      "method": "chemigation",
+      "quote": "Do not apply when wind speed favors drift beyond the area intended for treatment.",
+      "page": 6
+    },
+    {
+      "id": "r2",
+      "kind": "filter_strip",
+      "method": "any",
+      "quote": "Construct and maintain a vegetative filter strip, according to the width specified below, of grass or other permanent vegetation between the field edge and nearby down gradient aquatic habitat",
+      "page": 6,
+      "distanceFt": 25,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r3",
+      "kind": "filter_strip",
+      "method": "any",
+      "quote": "Only apply products containing zeta-cypermethrin onto fields where a maintained vegetative filter strip of at least 25 feet exists between the field edge and where a down gradient aquatic habitat exists.",
+      "page": 6,
+      "distanceFt": 25,
+      "protects": "down gradient aquatic habitat"
+    },
+    {
+      "id": "r4",
+      "kind": "filter_strip",
+      "method": "any",
+      "quote": "For Western irrigated agriculture, a maintained vegetative filter strip of at least 10 feet wide is required.",
+      "page": 6,
+      "distanceFt": 10,
+      "protects": "aquatic habitat",
+      "note": "WA, OR, CA, ID, NV, UT, AZ, MT, WY, CO, NM, and TX (west of I-35)"
+    },
+    {
+      "id": "r5",
+      "kind": "filter_strip",
+      "method": "any",
+      "quote": "In all other areas, a vegetative filter strip with a minimum width of 25 feet is required, unless the following conditions are met.",
+      "page": 6,
+      "distanceFt": 25,
+      "protects": "aquatic habitat",
+      "note": "May be reduced to 15 feet if prime farmland, conservation tillage, terrace system, water and sediment control basins, or <= 10 acres."
+    },
+    {
+      "id": "r6",
+      "kind": "filter_strip",
+      "method": "any",
+      "quote": "Rice fields are not required to have a vegetative filter strip.",
+      "page": 7,
+      "crops": [
+        "rice"
+      ]
+    },
+    {
+      "id": "r7",
+      "kind": "water_buffer",
+      "method": "ground",
+      "quote": "Ground Application– Do not apply within 25 feet of aquatic habitats",
+      "page": 7,
+      "distanceFt": 25,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r8",
+      "kind": "water_buffer",
+      "method": "aerial_ulv",
+      "quote": "Ultra Low Volume (ULV) Aerial Application - Do not apply within 450 feet of aquatic habitats",
+      "page": 7,
+      "distanceFt": 450,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r9",
+      "kind": "water_buffer",
+      "method": "aerial",
+      "quote": "Non-ULV Aerial Application – Do not apply within 150 feet of aquatic habitats",
+      "page": 7,
+      "distanceFt": 150,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r10",
+      "kind": "other",
+      "method": "aerial",
+      "quote": "Do not release spray at a height greater than 10 feet above the vegetative canopy, unless a greater application height is necessary for pilot safety.",
+      "page": 7
+    },
+    {
+      "id": "r11",
+      "kind": "droplet_size",
+      "method": "aerial",
+      "quote": "Applicators are required to select nozzle and pressure that deliver medium or coarser droplets (ASABE S641)",
+      "page": 7
+    },
+    {
+      "id": "r12",
+      "kind": "wind_limit",
+      "method": "aerial",
+      "quote": "Do not apply when wind speeds exceed 15 mph at the application site.",
+      "page": 7,
+      "windMaxMph": 15,
+      "note": "If wind speed > 10 mph, boom length must be 65% or less for fixed wing and 75% or less for helicopters; otherwise 75% and 90%."
+    },
+    {
+      "id": "r13",
+      "kind": "other",
+      "method": "aerial",
+      "quote": "If the windspeed is 10 mph or less, applicators must use ½ swath displacement upwind at the downwind edge of the field.",
+      "page": 7,
+      "note": "When windspeed is 11-15 mph, use 3/4 swath displacement."
+    },
+    {
+      "id": "r14",
+      "kind": "inversion",
+      "method": "aerial",
+      "quote": "Do not apply during temperature inversions.",
+      "page": 7
+    },
+    {
+      "id": "r15",
+      "kind": "other",
+      "method": "airblast",
+      "quote": "Sprays must be directed into the canopy.",
+      "page": 7
+    },
+    {
+      "id": "r16",
+      "kind": "wind_limit",
+      "method": "airblast",
+      "quote": "Do not apply when wind speeds exceed 15 mph at the application site.",
+      "page": 7,
+      "windMaxMph": 15
+    },
+    {
+      "id": "r17",
+      "kind": "other",
+      "method": "airblast",
+      "quote": "User must turn off outward pointing nozzles at row ends and when spraying outer row.",
+      "page": 7
+    },
+    {
+      "id": "r18",
+      "kind": "inversion",
+      "method": "airblast",
+      "quote": "Do not apply during temperature inversions.",
+      "page": 7
+    },
+    {
+      "id": "r19",
+      "kind": "other",
+      "method": "ground",
+      "quote": "User must only apply with the nozzle height recommended by the manufacturer, but no more than 4 feet above the ground or crop canopy.",
+      "page": 7
+    },
+    {
+      "id": "r20",
+      "kind": "droplet_size",
+      "method": "ground",
+      "quote": "Applicators are required to select nozzle and pressure that deliver medium or coarser droplets (ASABE S572).",
+      "page": 7
+    },
+    {
+      "id": "r21",
+      "kind": "wind_limit",
+      "method": "ground",
+      "quote": "Do not apply when wind speeds exceed 15 mph at the application site.",
+      "page": 7,
+      "windMaxMph": 15
+    },
+    {
+      "id": "r22",
+      "kind": "inversion",
+      "method": "ground",
+      "quote": "Do not apply during temperature inversions.",
+      "page": 7
+    },
+    {
+      "id": "r23",
+      "kind": "other",
+      "method": "aerial_ulv",
+      "quote": "ULV oil spray application is prohibited.",
+      "page": 11,
+      "crops": [
+        "nongrass animal feeds (forage, fodder, straw and hay) group - except alfalfa and alfalfa grown for seed"
+      ],
+      "prohibited": true
+    },
+    {
+      "id": "r24",
+      "kind": "other",
+      "method": "aerial_ulv",
+      "quote": "ULV oil spray application is prohibited.",
+      "page": 12,
+      "crops": [
+        "alfalfa; alfalfa grown for seed"
+      ],
+      "prohibited": true
+    },
+    {
+      "id": "r25",
+      "kind": "other",
+      "method": "any",
+      "quote": "Not for this use in California",
+      "page": 15,
+      "crops": [
+        "leafy brassica greens crop subgroup 4-16b"
+      ],
+      "state": "CA"
+    },
+    {
+      "id": "r26",
+      "kind": "other",
+      "method": "aerial_ulv",
+      "quote": "ULV oil spray application is prohibited.",
+      "page": 23,
+      "crops": [
+        "grass forage, fodder, and hay group and grass grown for seed and pasture and rangeland"
+      ],
+      "prohibited": true
+    },
+    {
+      "id": "r27",
+      "kind": "other",
+      "method": "any",
+      "quote": "Not for this use in California",
+      "page": 26,
+      "crops": [
+        "leafy greens crop subgroup 4-16a"
+      ],
+      "state": "CA"
+    },
+    {
+      "id": "r28",
+      "kind": "other",
+      "method": "aerial_ulv",
+      "quote": "Do not apply as a ULV spray.",
+      "page": 30,
+      "crops": [
+        "pome fruit crop group 11-10"
+      ],
+      "prohibited": true
+    },
+    {
+      "id": "r29",
+      "kind": "other",
+      "method": "aerial_ulv",
+      "quote": "Do not apply as an ultra-low volume (ULV) spray.",
+      "page": 31,
+      "crops": [
+        "rice and wild rice"
+      ],
+      "prohibited": true
+    },
+    {
+      "id": "r30",
+      "kind": "other",
+      "method": "aerial_ulv",
+      "quote": "ULV oil spray application is prohibited.",
+      "page": 33,
+      "crops": [
+        "sod farms"
+      ],
+      "prohibited": true
+    },
+    {
+      "id": "r31",
+      "kind": "other",
+      "method": "aerial_ulv",
+      "quote": "Do not apply as a ULV spray.",
+      "page": 36,
+      "crops": [
+        "stone fruit crop group 12-12"
+      ],
+      "prohibited": true
+    }
+  ],
+  "model": "gemini-3.5-flash-lite",
+  "latencyMs": 14324,
+  "mode": "replay",
+  "dropped": 0,
+  "problems": [],
+  "product": "F9114 EC Insecticide",
+  "epaRegNo": "279-3426",
+  "recordedAt": "2026-10-11T15:54:20.894Z",
+  "sourceRun": "live /api/extract",
+  "pdfSha256": "71630dc79cbfdcb62ee0d41c724b90175c2957ef22bf9164c9843ed3cfaa137e"
+}

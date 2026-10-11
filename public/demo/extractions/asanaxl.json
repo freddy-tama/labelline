@@ -1,0 +1,144 @@
+{
+  "restrictions": [
+    {
+      "id": "r1",
+      "kind": "other",
+      "method": "aerial",
+      "quote": "Do not release spray at a height greater than 10 feet above the vegetative canopy, unless a greater application height is necessary for pilot safety.",
+      "page": 8
+    },
+    {
+      "id": "r2",
+      "kind": "droplet_size",
+      "method": "aerial",
+      "quote": "Applicators are required to select nozzle and pressure that deliver medium or coarser droplets (ASABE S641).",
+      "page": 8
+    },
+    {
+      "id": "r3",
+      "kind": "wind_limit",
+      "method": "aerial",
+      "quote": "Do not apply when wind speeds exceed 15 mph at the application site.",
+      "page": 8,
+      "windMaxMph": 15
+    },
+    {
+      "id": "r4",
+      "kind": "inversion",
+      "method": "aerial",
+      "quote": "Do not apply during temperature inversions.",
+      "page": 8
+    },
+    {
+      "id": "r5",
+      "kind": "other",
+      "method": "airblast",
+      "quote": "Sprays must be directed into the canopy.",
+      "page": 8
+    },
+    {
+      "id": "r6",
+      "kind": "wind_limit",
+      "method": "airblast",
+      "quote": "Do not apply when wind speeds exceed 15 mph at the application site.",
+      "page": 8,
+      "windMaxMph": 15
+    },
+    {
+      "id": "r7",
+      "kind": "inversion",
+      "method": "airblast",
+      "quote": "Do not apply during temperature inversions.",
+      "page": 8
+    },
+    {
+      "id": "r8",
+      "kind": "other",
+      "method": "ground",
+      "quote": "User must only apply with the nozzle height recommended by the manufacturer, but no more than 4 feet above the ground or crop canopy.",
+      "page": 8
+    },
+    {
+      "id": "r9",
+      "kind": "droplet_size",
+      "method": "ground",
+      "quote": "Applicators are required to select nozzle and pressure that deliver medium or coarser droplets (ASABE S572).",
+      "page": 8
+    },
+    {
+      "id": "r10",
+      "kind": "wind_limit",
+      "method": "ground",
+      "quote": "Do not apply when wind speeds exceed 15 mph at the application site.",
+      "page": 8,
+      "windMaxMph": 15
+    },
+    {
+      "id": "r11",
+      "kind": "inversion",
+      "method": "ground",
+      "quote": "Do not apply during temperature inversions.",
+      "page": 8
+    },
+    {
+      "id": "r12",
+      "kind": "inversion",
+      "method": "any",
+      "quote": "Avoid applications during temperature inversions.",
+      "page": 9
+    },
+    {
+      "id": "r13",
+      "kind": "wind_limit",
+      "method": "any",
+      "quote": "AVOID APPLICATIONS DURING GUSTY WIND CONDITIONS.",
+      "page": 9
+    },
+    {
+      "id": "r14",
+      "kind": "filter_strip",
+      "method": "any",
+      "quote": "Only apply products containing esfenvalerate onto fields where a maintained vegetative filter strip of at least 25 feet exists between the field edge and where a down gradient aquatic habitat exists.",
+      "page": 9,
+      "distanceFt": 25,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r15",
+      "kind": "water_buffer",
+      "method": "ground",
+      "quote": "Do not apply within 25 feet of aquatic habitats (such as, but not limited to, lakes, reservoirs, rivers, streams, marshes, ponds, estuaries, and commercial fish ponds).",
+      "page": 9,
+      "distanceFt": 25,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r16",
+      "kind": "water_buffer",
+      "method": "aerial_ulv",
+      "quote": "Do not apply within 450 feet of aquatic habitats (such as, but not limited to, lakes, reservoirs, rivers, streams, marshes, ponds, estuaries, and commercial fish ponds).",
+      "page": 9,
+      "distanceFt": 450,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r17",
+      "kind": "water_buffer",
+      "method": "aerial",
+      "quote": "Do not apply within 150 feet of aquatic habitats (such as, but not limited to, lakes, reservoirs, rivers, streams, marshes, ponds, estuaries, and commercial fish ponds).",
+      "page": 9,
+      "distanceFt": 150,
+      "protects": "aquatic habitats"
+    }
+  ],
+  "model": "gemini-3.5-flash-lite",
+  "latencyMs": 30482,
+  "mode": "replay",
+  "dropped": 0,
+  "problems": [],
+  "product": "DUPONT ASANA XL INSECTICIDE",
+  "epaRegNo": "59639-209",
+  "recordedAt": "2026-10-11T15:54:51.392Z",
+  "sourceRun": "live /api/extract",
+  "pdfSha256": "c13b9ecda34926631196c85cf6819966e342b8da440b7e5ac946e5525bf6fb5f"
+}

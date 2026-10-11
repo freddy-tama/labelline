@@ -1,0 +1,211 @@
+{
+  "restrictions": [
+    {
+      "id": "r1",
+      "kind": "other",
+      "method": "chemigation",
+      "quote": "Do not apply when wind speed favors drift beyond the area intended for treatment.",
+      "page": 6
+    },
+    {
+      "id": "r2",
+      "kind": "water_buffer",
+      "method": "ground",
+      "quote": "Ground Application – Do not apply within 25 feet of aquatic habitats",
+      "page": 7,
+      "distanceFt": 25,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r3",
+      "kind": "water_buffer",
+      "method": "aerial_ulv",
+      "quote": "Ultra Low Volume (ULV) Aerial Application - Do not apply within 450 feet of aquatic habitats",
+      "page": 7,
+      "distanceFt": 450,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r4",
+      "kind": "water_buffer",
+      "method": "aerial",
+      "quote": "Non-ULV Aerial Application – Do not apply within 150 feet of aquatic habitats",
+      "page": 7,
+      "distanceFt": 150,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r5",
+      "kind": "water_buffer",
+      "method": "ground",
+      "quote": "In New York State this product may not be applied within 100 feet (using ground equipment)",
+      "page": 7,
+      "distanceFt": 100,
+      "state": "NY",
+      "protects": "coastal marshes or streams that drain into coastal marshes"
+    },
+    {
+      "id": "r6",
+      "kind": "water_buffer",
+      "method": "aerial",
+      "quote": "to 300 feet (using aerial equipment) of coastal marshes or streams that drain into coastal marshes.",
+      "page": 7,
+      "distanceFt": 300,
+      "state": "NY",
+      "protects": "coastal marshes or streams that drain into coastal marshes"
+    },
+    {
+      "id": "r7",
+      "kind": "other",
+      "method": "aerial",
+      "quote": "Do not release spray at a height greater than 10 feet above the vegetative canopy, unless a greater application height is necessary for pilot safety.",
+      "page": 7
+    },
+    {
+      "id": "r8",
+      "kind": "droplet_size",
+      "method": "aerial",
+      "quote": "Applicators are required to select nozzle and pressure that deliver medium or coarser droplets (ASABE S641)",
+      "page": 7
+    },
+    {
+      "id": "r9",
+      "kind": "wind_limit",
+      "method": "aerial",
+      "quote": "Do not apply when wind speeds exceed 15 mph at the application site.",
+      "page": 7,
+      "windMaxMph": 15
+    },
+    {
+      "id": "r10",
+      "kind": "inversion",
+      "method": "aerial",
+      "quote": "Do not apply during temperature inversions.",
+      "page": 7
+    },
+    {
+      "id": "r11",
+      "kind": "wind_limit",
+      "method": "airblast",
+      "quote": "Do not apply when wind speeds exceed 15 mph at the application site.",
+      "page": 7,
+      "windMaxMph": 15
+    },
+    {
+      "id": "r12",
+      "kind": "inversion",
+      "method": "airblast",
+      "quote": "Do not apply during temperature inversions.",
+      "page": 7
+    },
+    {
+      "id": "r13",
+      "kind": "other",
+      "method": "ground",
+      "quote": "User must only apply with the nozzle height recommended by the manufacturer, but no more than 4 feet above the ground or crop canopy.",
+      "page": 7
+    },
+    {
+      "id": "r14",
+      "kind": "droplet_size",
+      "method": "ground",
+      "quote": "Applicators are required to select nozzle and pressure that deliver medium or coarser droplets (ASABE S572).",
+      "page": 7
+    },
+    {
+      "id": "r15",
+      "kind": "wind_limit",
+      "method": "ground",
+      "quote": "Do not apply when wind speeds exceed 15 mph at the application site.",
+      "page": 7,
+      "windMaxMph": 15
+    },
+    {
+      "id": "r16",
+      "kind": "inversion",
+      "method": "ground",
+      "quote": "Do not apply during temperature inversions.",
+      "page": 7
+    },
+    {
+      "id": "r17",
+      "kind": "other",
+      "method": "aerial_ulv",
+      "quote": "Use of ultra-low volume (ULV) application on corn is prohibited.",
+      "page": 10,
+      "crops": [
+        "field corn",
+        "popcorn",
+        "field corn grown for seed"
+      ],
+      "prohibited": true
+    },
+    {
+      "id": "r18",
+      "kind": "rain",
+      "method": "any",
+      "quote": "Do not make aerial or ground applications to corn if heavy rainfall is imminent.",
+      "page": 10,
+      "crops": [
+        "field corn",
+        "popcorn",
+        "field corn grown for seed"
+      ]
+    },
+    {
+      "id": "r19",
+      "kind": "other",
+      "method": "aerial_ulv",
+      "quote": "Use of ultra-low volume (ULV) application on corn is prohibited.",
+      "page": 13,
+      "crops": [
+        "sweet corn",
+        "sweet corn grown for seed"
+      ],
+      "prohibited": true
+    },
+    {
+      "id": "r20",
+      "kind": "rain",
+      "method": "any",
+      "quote": "Do not make aerial or ground applications to corn if heavy rainfall is imminent.",
+      "page": 13,
+      "crops": [
+        "sweet corn",
+        "sweet corn grown for seed"
+      ]
+    },
+    {
+      "id": "r21",
+      "kind": "other",
+      "method": "aerial",
+      "quote": "Ground application only.",
+      "page": 19,
+      "crops": [
+        "citrus fruit"
+      ],
+      "prohibited": true
+    },
+    {
+      "id": "r22",
+      "kind": "other",
+      "method": "aerial",
+      "quote": "Do not apply by air.",
+      "page": 19,
+      "crops": [
+        "citrus fruit"
+      ],
+      "prohibited": true
+    }
+  ],
+  "model": "gemini-3.5-flash-lite",
+  "latencyMs": 13571,
+  "mode": "replay",
+  "dropped": 0,
+  "problems": [],
+  "product": "BRIGADE 2EC INSECTICIDE/MITICIDE",
+  "epaRegNo": "279-3313",
+  "recordedAt": "2026-10-11T15:53:21.810Z",
+  "sourceRun": "live /api/extract",
+  "pdfSha256": "42f1ff95af786b729dffafea542e06adbafc43cc4fddccbf00f57269e823a50d"
+}

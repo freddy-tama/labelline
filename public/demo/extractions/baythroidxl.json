@@ -1,0 +1,131 @@
+{
+  "restrictions": [
+    {
+      "id": "r1",
+      "kind": "filter_strip",
+      "method": "any",
+      "quote": "Construct and maintain a minimum 10-foot-wide vegetative filter strip of grass or other permanent vegetation between the field edge and down gradient aquatic habitat",
+      "page": 4,
+      "distanceFt": 10,
+      "protects": "aquatic habitat"
+    },
+    {
+      "id": "r2",
+      "kind": "water_buffer",
+      "method": "ground",
+      "quote": "Do not apply within 25 feet of aquatic habitats (such as, but not limited to, lakes reservoirs, rivers, permanent streams; marshes or natural ponds, estuaries, and commercial fishponds).",
+      "page": 4,
+      "distanceFt": 25,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r3",
+      "kind": "water_buffer",
+      "method": "aerial_ulv",
+      "quote": "Do not apply within 450 feet of aquatic habitats (such as, but not limited to, lakes, reservoirs, rivers, permanent streams; marshes or natural ponds, estuaries, and commercial fishponds).",
+      "page": 5,
+      "distanceFt": 450,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r4",
+      "kind": "water_buffer",
+      "method": "aerial",
+      "quote": "Do not apply within 150 feet of aquatic habitats (such as, but not limited to, lakes, reservoirs, rivers, permanent streams; marshes or natural ponds, estuaries, and commercial fishponds).",
+      "page": 5,
+      "distanceFt": 150,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r5",
+      "kind": "wind_limit",
+      "method": "any",
+      "quote": "Do not apply when the wind velocity exceeds 15 mph.",
+      "page": 5,
+      "windMaxMph": 15
+    },
+    {
+      "id": "r6",
+      "kind": "inversion",
+      "method": "any",
+      "quote": "Do not make aerial or ground applications into temperature inversions.",
+      "page": 5
+    },
+    {
+      "id": "r7",
+      "kind": "droplet_size",
+      "method": "ground",
+      "quote": "Use only Medium or coarser spray nozzles (for ground and non-ULV aerial application) according to ASAE (S572) definition for standard nozzles.",
+      "page": 5
+    },
+    {
+      "id": "r8",
+      "kind": "droplet_size",
+      "method": "aerial",
+      "quote": "Use only Medium or coarser spray nozzles (for ground and non-ULV aerial application) according to ASAE (S572) definition for standard nozzles.",
+      "page": 5
+    },
+    {
+      "id": "r9",
+      "kind": "rain",
+      "method": "any",
+      "quote": "Do not apply in the rain.",
+      "page": 5
+    },
+    {
+      "id": "r10",
+      "kind": "other",
+      "method": "aerial_ulv",
+      "quote": "DO NOT apply by ULV application.",
+      "page": 17,
+      "crops": [
+        "sunflower"
+      ],
+      "prohibited": true
+    },
+    {
+      "id": "r11",
+      "kind": "other",
+      "method": "any",
+      "quote": "Use not permitted in California.",
+      "page": 17,
+      "crops": [
+        "sunflower"
+      ],
+      "state": "CA"
+    },
+    {
+      "id": "r12",
+      "kind": "other",
+      "method": "any",
+      "quote": "Use not permitted in CA.",
+      "page": 18,
+      "crops": [
+        "tobacco"
+      ],
+      "state": "CA"
+    },
+    {
+      "id": "r13",
+      "kind": "other",
+      "method": "any",
+      "quote": "Use not permitted in California.",
+      "page": 28,
+      "crops": [
+        "sweet corn"
+      ],
+      "state": "CA",
+      "note": "Applies to soil applications"
+    }
+  ],
+  "model": "gemini-3.5-flash-lite",
+  "latencyMs": 30454,
+  "mode": "replay",
+  "dropped": 0,
+  "problems": [],
+  "product": "Baythroid XL",
+  "epaRegNo": "264-840",
+  "recordedAt": "2026-10-11T15:55:30.475Z",
+  "sourceRun": "live /api/extract",
+  "pdfSha256": "24ebcbeb35e6b4cdf7e246ebedd2b436d593d735c011829423bda90dd24074c2"
+}

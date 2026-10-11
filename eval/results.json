@@ -1,0 +1,586 @@
+{
+  "generatedAt": "2026-10-11T15:55:35.494Z",
+  "generatedBy": "eval/run-eval.ts",
+  "model": "gemini-3.5-flash-lite",
+  "mode": "replay",
+  "answerKey": {
+    "path": "eval/answer-key.json",
+    "sha256": "7481b9da9707e750af2b903ec2b2123ea83a2434e1e2932c4ed3329bd1fb778a"
+  },
+  "scoring": {
+    "match": "one-to-one maximum matching; same kind, same method (or one of the key item acceptMethods), compatible crops (both absent, or sharing a crop), equal distanceFt / windMinMph / windMaxMph, key prohibitions only by extracted prohibitions, page within +-1 of the key pdf_page (verified page, else claimed page); key items with identical kind, method, crops, numbers, prohibited flag and page count once",
+    "recall": "answer-key restrictions with a distance or wind number that were matched / all of them",
+    "precision": "extracted restrictions with a distance or wind number that match an answer-key item by the match rule (a repeat of an already matched key item counts as correct) / all extracted restrictions with a distance or wind number. A clause whose sentence is a key sentence but whose kind, method, crops or number disagree is wrong; a clause found in the PDF whose sentence is not in the key is not credited (see notInKey)",
+    "verifiedQuoteRate": "extracted restrictions whose quote was found in the PDF text layer (findQuote) / all extracted restrictions",
+    "prohibitions": "answer-key crop prohibitions matched by an extracted prohibition / key prohibitions (only the BUILD_SPEC-named ones are keyed; see eval/ANNOTATION.md)",
+    "notInKey": "extracted distance or wind clauses found in the PDF whose sentence is not in the answer key; counted as not correct in precision and listed in extras",
+    "unmatchedProhibitions": "extracted prohibitions without a number that match no key prohibition; no ratio scores them, so they are counted here and listed in extras"
+  },
+  "labels": [
+    {
+      "slug": "brigade2ec",
+      "product": "Brigade 2EC Insecticide/Miticide",
+      "mode": "replay",
+      "model": "gemini-3.5-flash-lite",
+      "recordedAt": "2026-10-11T15:53:21.810Z",
+      "source": "public/demo/extractions/brigade2ec.json (recorded from live /api/extract)",
+      "recall": {
+        "found": 8,
+        "total": 12
+      },
+      "precision": {
+        "correct": 8,
+        "total": 8
+      },
+      "verifiedQuoteRate": {
+        "verified": 22,
+        "total": 22
+      },
+      "prohibitions": {
+        "found": 1,
+        "total": 1
+      },
+      "notInKey": 0,
+      "unmatchedProhibitions": 3,
+      "extracted": 22,
+      "misses": [
+        {
+          "cats": [
+            "vfs"
+          ],
+          "kind": "filter_strip",
+          "method": "any",
+          "distanceFt": 25,
+          "page": 6,
+          "quote": "Only apply products containing bifenthrin onto fields where a maintained vegetative filter strip of at least 25 feet exists between the field edge and where a …",
+          "why": "closest: r2 (water_buffer, ground, 25 ft, p7) differs by kind water_buffer; method ground"
+        },
+        {
+          "cats": [
+            "vfs_west"
+          ],
+          "kind": "filter_strip",
+          "method": "any",
+          "distanceFt": 10,
+          "page": 6,
+          "quote": "For Western irrigated agriculture, a maintained vegetative filter strip of at least 10 feet wide is required.",
+          "why": "no extracted restriction has 10 ft"
+        },
+        {
+          "cats": [
+            "vfs_reduction"
+          ],
+          "kind": "filter_strip",
+          "method": "any",
+          "distanceFt": 15,
+          "page": 7,
+          "quote": "The vegetative filter strip requirement may be reduced from 25 feet to 15 feet if at least one of the following applies:",
+          "why": "no extracted restriction has 15 ft"
+        },
+        {
+          "cats": [
+            "state_ny_sod"
+          ],
+          "kind": "water_buffer",
+          "method": "any",
+          "crops": [
+            "sod",
+            "turf",
+            "grass"
+          ],
+          "distanceFt": 100,
+          "state": "NY",
+          "page": 30,
+          "quote": "In New York State, this product may NOT be applied to any grass or turf area within 100 feet of a water body (lake, pond, river, stream, wetland, or drainage d…",
+          "why": "closest: r5 (water_buffer, ground, 100 ft, p7) differs by method ground; no crops; page 7"
+        }
+      ],
+      "extras": [
+        {
+          "id": "r19",
+          "kind": "other",
+          "method": "aerial_ulv",
+          "crops": [
+            "sweet corn",
+            "sweet corn grown for seed"
+          ],
+          "prohibited": true,
+          "page": 13,
+          "verified": true,
+          "quote": "Use of ultra-low volume (ULV) application on corn is prohibited.",
+          "counted": "not counted",
+          "why": "verified prohibition that is not in the answer key"
+        },
+        {
+          "id": "r21",
+          "kind": "other",
+          "method": "aerial",
+          "crops": [
+            "citrus fruit"
+          ],
+          "prohibited": true,
+          "page": 19,
+          "verified": true,
+          "quote": "Ground application only.",
+          "counted": "not counted",
+          "why": "verified prohibition that is not in the answer key"
+        },
+        {
+          "id": "r22",
+          "kind": "other",
+          "method": "aerial",
+          "crops": [
+            "citrus fruit"
+          ],
+          "prohibited": true,
+          "page": 19,
+          "verified": true,
+          "quote": "Do not apply by air.",
+          "counted": "not counted",
+          "why": "verified prohibition that is not in the answer key"
+        }
+      ]
+    },
+    {
+      "slug": "warrior2",
+      "product": "Warrior II with Zeon Technology",
+      "mode": "replay",
+      "model": "gemini-3.5-flash-lite",
+      "recordedAt": "2026-10-11T15:54:06.555Z",
+      "source": "public/demo/extractions/warrior2.json (recorded from live /api/extract)",
+      "recall": {
+        "found": 7,
+        "total": 10
+      },
+      "precision": {
+        "correct": 7,
+        "total": 8
+      },
+      "verifiedQuoteRate": {
+        "verified": 20,
+        "total": 20
+      },
+      "prohibitions": {
+        "found": 1,
+        "total": 1
+      },
+      "notInKey": 0,
+      "unmatchedProhibitions": 1,
+      "extracted": 20,
+      "misses": [
+        {
+          "cats": [
+            "state_ny"
+          ],
+          "kind": "filter_strip",
+          "method": "any",
+          "distanceFt": 25,
+          "state": "NY",
+          "page": 14,
+          "quote": "In the state of New York, a 25 ft vegetated, non-cropped buffer strip untraversed by drainage tiles must be maintained between a treated field and a coastal sa…",
+          "why": "closest: r14 (filter_strip, any, 25 ft, p13) differs by "
+        },
+        {
+          "cats": [
+            "vfs_west"
+          ],
+          "kind": "filter_strip",
+          "method": "any",
+          "distanceFt": 10,
+          "page": 13,
+          "quote": "For Western irrigated agriculture, a maintained vegetative filter strip of at least 10 feet wide is required.",
+          "why": "no extracted restriction has 10 ft"
+        },
+        {
+          "cats": [
+            "vfs_reduction"
+          ],
+          "kind": "filter_strip",
+          "method": "any",
+          "distanceFt": 15,
+          "page": 13,
+          "quote": "The vegetative filter strip requirement may be reduced from 25 feet to 15 feet if at least one of the following applies:",
+          "why": "no extracted restriction has 15 ft"
+        }
+      ],
+      "extras": [
+        {
+          "id": "r12",
+          "kind": "wind_limit",
+          "method": "any",
+          "windMaxMph": 15,
+          "page": 11,
+          "verified": true,
+          "quote": "Do not apply when wind speeds exceed 15 miles per hour at the application site.",
+          "counted": "incorrect",
+          "why": "verified sentence is key item wind_max_boomless (wind_limit, ground, max 15 mph, p11), which disagrees on method"
+        },
+        {
+          "id": "r20",
+          "kind": "other",
+          "method": "aerial_ulv",
+          "crops": [
+            "sunflower"
+          ],
+          "prohibited": true,
+          "page": 52,
+          "verified": true,
+          "quote": "Do not apply as an ultra-low volume (ULV) spray.",
+          "counted": "not counted",
+          "why": "verified prohibition that is not in the answer key"
+        }
+      ]
+    },
+    {
+      "slug": "mustangmaxx",
+      "product": "Mustang Maxx Insecticide",
+      "mode": "replay",
+      "model": "gemini-3.5-flash-lite",
+      "recordedAt": "2026-10-11T15:54:20.894Z",
+      "source": "public/demo/extractions/mustangmaxx.json (recorded from live /api/extract)",
+      "recall": {
+        "found": 8,
+        "total": 9
+      },
+      "precision": {
+        "correct": 9,
+        "total": 10
+      },
+      "verifiedQuoteRate": {
+        "verified": 30,
+        "total": 31
+      },
+      "prohibitions": {
+        "found": 1,
+        "total": 1
+      },
+      "notInKey": 0,
+      "unmatchedProhibitions": 6,
+      "extracted": 31,
+      "misses": [
+        {
+          "cats": [
+            "vfs_reduction"
+          ],
+          "kind": "filter_strip",
+          "method": "any",
+          "distanceFt": 15,
+          "page": 6,
+          "quote": "The vegetative filter strip requirement may be reduced from 25 feet to 15 feet if at least one of the following applies:",
+          "why": "no extracted restriction has 15 ft"
+        }
+      ],
+      "extras": [
+        {
+          "id": "r2",
+          "kind": "filter_strip",
+          "method": "any",
+          "distanceFt": 25,
+          "page": 6,
+          "verified": false,
+          "quote": "Construct and maintain a vegetative filter strip, according to the width specified below, of grass or other permanent vegetation between the field edge and nea…",
+          "counted": "incorrect",
+          "why": "quote not found in the PDF with 25 ft"
+        },
+        {
+          "id": "r5",
+          "kind": "filter_strip",
+          "method": "any",
+          "distanceFt": 25,
+          "page": 6,
+          "verified": true,
+          "quote": "In all other areas, a vegetative filter strip with a minimum width of 25 feet is required, unless the following conditions are met.",
+          "counted": "correct",
+          "why": "repeats key item vfs (filter_strip, any, 25 ft, p6), which another extracted clause already matched; counted once in recall"
+        },
+        {
+          "id": "r23",
+          "kind": "other",
+          "method": "aerial_ulv",
+          "crops": [
+            "nongrass animal feeds (forage, fodder, straw and hay) group - except alfalfa and alfalfa grown for seed"
+          ],
+          "prohibited": true,
+          "page": 11,
+          "verified": true,
+          "quote": "ULV oil spray application is prohibited.",
+          "counted": "not counted",
+          "why": "verified prohibition that is not in the answer key"
+        },
+        {
+          "id": "r24",
+          "kind": "other",
+          "method": "aerial_ulv",
+          "crops": [
+            "alfalfa; alfalfa grown for seed"
+          ],
+          "prohibited": true,
+          "page": 12,
+          "verified": true,
+          "quote": "ULV oil spray application is prohibited.",
+          "counted": "not counted",
+          "why": "verified prohibition that is not in the answer key"
+        },
+        {
+          "id": "r26",
+          "kind": "other",
+          "method": "aerial_ulv",
+          "crops": [
+            "grass forage, fodder, and hay group and grass grown for seed and pasture and rangeland"
+          ],
+          "prohibited": true,
+          "page": 23,
+          "verified": true,
+          "quote": "ULV oil spray application is prohibited.",
+          "counted": "not counted",
+          "why": "verified prohibition that is not in the answer key"
+        },
+        {
+          "id": "r28",
+          "kind": "other",
+          "method": "aerial_ulv",
+          "crops": [
+            "pome fruit crop group 11-10"
+          ],
+          "prohibited": true,
+          "page": 30,
+          "verified": true,
+          "quote": "Do not apply as a ULV spray.",
+          "counted": "not counted",
+          "why": "verified prohibition that is not in the answer key"
+        },
+        {
+          "id": "r30",
+          "kind": "other",
+          "method": "aerial_ulv",
+          "crops": [
+            "sod farms"
+          ],
+          "prohibited": true,
+          "page": 33,
+          "verified": true,
+          "quote": "ULV oil spray application is prohibited.",
+          "counted": "not counted",
+          "why": "verified prohibition that is not in the answer key"
+        },
+        {
+          "id": "r31",
+          "kind": "other",
+          "method": "aerial_ulv",
+          "crops": [
+            "stone fruit crop group 12-12"
+          ],
+          "prohibited": true,
+          "page": 36,
+          "verified": true,
+          "quote": "Do not apply as a ULV spray.",
+          "counted": "not counted",
+          "why": "verified prohibition that is not in the answer key"
+        }
+      ]
+    },
+    {
+      "slug": "asanaxl",
+      "product": "DuPont Asana XL Insecticide",
+      "mode": "replay",
+      "model": "gemini-3.5-flash-lite",
+      "recordedAt": "2026-10-11T15:54:51.392Z",
+      "source": "public/demo/extractions/asanaxl.json (recorded from live /api/extract)",
+      "recall": {
+        "found": 7,
+        "total": 9
+      },
+      "precision": {
+        "correct": 7,
+        "total": 7
+      },
+      "verifiedQuoteRate": {
+        "verified": 17,
+        "total": 17
+      },
+      "prohibitions": {
+        "found": 0,
+        "total": 0
+      },
+      "notInKey": 0,
+      "unmatchedProhibitions": 0,
+      "extracted": 17,
+      "misses": [
+        {
+          "cats": [
+            "vfs_west"
+          ],
+          "kind": "filter_strip",
+          "method": "any",
+          "distanceFt": 10,
+          "page": 9,
+          "quote": "For Western irrigated agriculture, a maintained vegetative filter strip of at least 10 feet wide is required.",
+          "why": "no extracted restriction has 10 ft"
+        },
+        {
+          "cats": [
+            "vfs_reduction"
+          ],
+          "kind": "filter_strip",
+          "method": "any",
+          "distanceFt": 15,
+          "page": 9,
+          "quote": "The vegetative filter strip requirement may be reduced from 25 feet to 15 feet if at least one of the following applies:",
+          "why": "no extracted restriction has 15 ft"
+        }
+      ],
+      "extras": []
+    },
+    {
+      "slug": "upcyde25ec",
+      "product": "UP-Cyde 2.5 EC Agricultural Insecticide",
+      "mode": "replay",
+      "model": "gemini-3.5-flash-lite",
+      "recordedAt": "2026-10-11T15:55:00.012Z",
+      "source": "public/demo/extractions/upcyde25ec.json (recorded from live /api/extract)",
+      "recall": {
+        "found": 5,
+        "total": 7
+      },
+      "precision": {
+        "correct": 5,
+        "total": 5
+      },
+      "verifiedQuoteRate": {
+        "verified": 12,
+        "total": 12
+      },
+      "prohibitions": {
+        "found": 0,
+        "total": 0
+      },
+      "notInKey": 0,
+      "unmatchedProhibitions": 0,
+      "extracted": 12,
+      "misses": [
+        {
+          "cats": [
+            "buffer_chemigation"
+          ],
+          "kind": "water_buffer",
+          "method": "chemigation",
+          "distanceFt": 25,
+          "page": 4,
+          "quote": "Do not apply within 25 feet of aquatic habitats (such as, but not limited to, lakes, reservoirs, rivers, streams, marshes, ponds, estuaries, and commercial fis…",
+          "why": "closest: r2 (water_buffer, ground, 25 ft, p4) differs by method ground"
+        },
+        {
+          "cats": [
+            "buffer_airblast"
+          ],
+          "kind": "water_buffer",
+          "method": "airblast",
+          "distanceFt": 25,
+          "page": 4,
+          "quote": "Do not apply within 25 feet of aquatic habitats (such as, but not limited to, lakes, reservoirs, rivers, streams, marshes, ponds, estuaries, and commercial fis…",
+          "why": "closest: r2 (water_buffer, ground, 25 ft, p4) differs by method ground"
+        }
+      ],
+      "extras": []
+    },
+    {
+      "slug": "baythroidxl",
+      "product": "Baythroid XL",
+      "mode": "replay",
+      "model": "gemini-3.5-flash-lite",
+      "recordedAt": "2026-10-11T15:55:30.475Z",
+      "source": "public/demo/extractions/baythroidxl.json (recorded from live /api/extract)",
+      "recall": {
+        "found": 5,
+        "total": 8
+      },
+      "precision": {
+        "correct": 5,
+        "total": 5
+      },
+      "verifiedQuoteRate": {
+        "verified": 13,
+        "total": 13
+      },
+      "prohibitions": {
+        "found": 0,
+        "total": 0
+      },
+      "notInKey": 0,
+      "unmatchedProhibitions": 1,
+      "extracted": 13,
+      "misses": [
+        {
+          "cats": [
+            "runoff_cultivate"
+          ],
+          "kind": "filter_strip",
+          "method": "any",
+          "distanceFt": 10,
+          "page": 5,
+          "quote": "Do not cultivate within 10 feet of the aquatic areas to allow growth of a vegetative filter strip.",
+          "why": "closest: r1 (filter_strip, any, 10 ft, p4) differs by "
+        },
+        {
+          "cats": [
+            "buffer_chemigation"
+          ],
+          "kind": "water_buffer",
+          "method": "chemigation",
+          "distanceFt": 25,
+          "page": 4,
+          "quote": "Do not apply within 25 feet of aquatic habitats (such as, but not limited to, lakes reservoirs, rivers, permanent streams; marshes or natural ponds, estuaries,…",
+          "why": "closest: r2 (water_buffer, ground, 25 ft, p4) differs by method ground"
+        },
+        {
+          "cats": [
+            "buffer_airblast"
+          ],
+          "kind": "water_buffer",
+          "method": "airblast",
+          "distanceFt": 25,
+          "page": 4,
+          "quote": "Do not apply within 25 feet of aquatic habitats (such as, but not limited to, lakes reservoirs, rivers, permanent streams; marshes or natural ponds, estuaries,…",
+          "why": "closest: r2 (water_buffer, ground, 25 ft, p4) differs by method ground"
+        }
+      ],
+      "extras": [
+        {
+          "id": "r10",
+          "kind": "other",
+          "method": "aerial_ulv",
+          "crops": [
+            "sunflower"
+          ],
+          "prohibited": true,
+          "page": 17,
+          "verified": true,
+          "quote": "DO NOT apply by ULV application.",
+          "counted": "not counted",
+          "why": "verified prohibition that is not in the answer key"
+        }
+      ]
+    }
+  ],
+  "overall": {
+    "recall": {
+      "found": 40,
+      "total": 55
+    },
+    "precision": {
+      "correct": 41,
+      "total": 43
+    },
+    "verifiedQuoteRate": {
+      "verified": 114,
+      "total": 115
+    },
+    "prohibitions": {
+      "found": 3,
+      "total": 3
+    },
+    "notInKey": 0,
+    "unmatchedProhibitions": 11
+  },
+  "skipped": []
+}

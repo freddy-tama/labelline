@@ -38,7 +38,9 @@ describe('extractionResponseSchema', () => {
     expect(item.required).toEqual(['page', 'quote', 'kind', 'method']);
     expect(item.properties.kind.enum).toEqual([...KINDS]);
     expect(item.properties.method.enum).toEqual([...METHODS]);
-    expect(item.properties.page).toMatchObject({ type: 'integer', minimum: 1 });
+    expect(item.properties.page).toMatchObject({ type: 'integer' });
+    // Gemini rejects minimum and maxItems (HTTP 400, 2026-10-11); validateItem enforces them instead.
+    expect(JSON.stringify(item)).not.toMatch(/minimum|maxItems/);
     for (const key of ['distanceFt', 'protects', 'windMinMph', 'windMaxMph', 'crops', 'prohibited', 'note']) {
       expect(item.properties, key).toHaveProperty(key);
     }

@@ -1,0 +1,110 @@
+{
+  "restrictions": [
+    {
+      "id": "r1",
+      "kind": "filter_strip",
+      "method": "any",
+      "quote": "Construct and maintain a minimum 10-fout wide vegetative filter strip of grass or other permanent vegetation between the field edge and down gradient aquatic habitat",
+      "page": 4,
+      "distanceFt": 10,
+      "protects": "aquatic habitat"
+    },
+    {
+      "id": "r2",
+      "kind": "water_buffer",
+      "method": "ground",
+      "quote": "Do not apply within 25 feet of aquatic habitats",
+      "page": 4,
+      "distanceFt": 25,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r3",
+      "kind": "water_buffer",
+      "method": "aerial_ulv",
+      "quote": "Do not apply within 450 feet of aquatic habitats",
+      "page": 4,
+      "distanceFt": 450,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r4",
+      "kind": "water_buffer",
+      "method": "aerial",
+      "quote": "Do not apply within 150 feet of aquatic habitats",
+      "page": 4,
+      "distanceFt": 150,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r5",
+      "kind": "wind_limit",
+      "method": "any",
+      "quote": "Do not apply when the wind velocity exceeds 15 mph.",
+      "page": 5,
+      "windMaxMph": 15
+    },
+    {
+      "id": "r6",
+      "kind": "inversion",
+      "method": "any",
+      "quote": "Do not make aerial or ground applications during temperature inversions.",
+      "page": 5
+    },
+    {
+      "id": "r7",
+      "kind": "droplet_size",
+      "method": "ground",
+      "quote": "Use only medium or coarser spray nozzles (for ground and non-ULV aerial application) according to ASAE (S572) definition for standard nozzles.",
+      "page": 6
+    },
+    {
+      "id": "r8",
+      "kind": "droplet_size",
+      "method": "aerial",
+      "quote": "Use only medium or coarser spray nozzles (for ground and non-ULV aerial application) according to ASAE (S572) definition for standard nozzles.",
+      "page": 6
+    },
+    {
+      "id": "r9",
+      "kind": "other",
+      "method": "any",
+      "quote": "Avoid applications more than 10 feet above the crop canopy.",
+      "page": 6,
+      "note": "Release height limit"
+    },
+    {
+      "id": "r10",
+      "kind": "other",
+      "method": "ground",
+      "quote": "For ground boom applications, apply using a nozzle height of no more than 4 feet above the ground or crop canopy.",
+      "page": 6,
+      "note": "Nozzle height limit"
+    },
+    {
+      "id": "r11",
+      "kind": "other",
+      "method": "airblast",
+      "quote": "For airblast applications, turn off outward pointing nozzles at row ends and when spraying the outer two rows.",
+      "page": 6
+    },
+    {
+      "id": "r12",
+      "kind": "other",
+      "method": "aerial",
+      "quote": "Do not release spray at a height greater than 10 feet above the crop canopy unless a greater height is required for aircraft safety.",
+      "page": 6,
+      "note": "Release height limit"
+    }
+  ],
+  "model": "gemini-3.5-flash-lite",
+  "latencyMs": 8591,
+  "mode": "replay",
+  "dropped": 0,
+  "problems": [],
+  "product": "UP-CYDE 2.5 EC AG INSECTICIDE",
+  "epaRegNo": "70506-20",
+  "recordedAt": "2026-10-11T15:55:00.012Z",
+  "sourceRun": "live /api/extract",
+  "pdfSha256": "5673270a1a32fd3ea42256b748f5639c0a396b92744aa22efaa413843c85774a"
+}

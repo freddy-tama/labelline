@@ -1,0 +1,177 @@
+{
+  "restrictions": [
+    {
+      "id": "r1",
+      "kind": "other",
+      "method": "aerial",
+      "quote": "Do not release spray at a height greater than 10 feet above the vegetative canopy, unless a greater application height is necessary for pilot safety.",
+      "page": 11
+    },
+    {
+      "id": "r2",
+      "kind": "droplet_size",
+      "method": "aerial",
+      "quote": "Applicators are required to select nozzle and pressure that deliver medium or coarser droplets according to the most current version of the American Society of Agricultural & Biological Engineers Standard 641 (ASABE S641).",
+      "page": 11
+    },
+    {
+      "id": "r3",
+      "kind": "wind_limit",
+      "method": "aerial",
+      "quote": "Do not apply when wind speeds exceed 15 mph at the application site.",
+      "page": 11,
+      "windMaxMph": 15,
+      "note": "If the wind speed is greater than 10 mph, the boom length must be 65% or less of the wingspan for fixed wing aircraft and 75% or less of the rotor diameter for helicopters."
+    },
+    {
+      "id": "r4",
+      "kind": "inversion",
+      "method": "aerial",
+      "quote": "Do not apply during temperature inversions.",
+      "page": 11
+    },
+    {
+      "id": "r5",
+      "kind": "other",
+      "method": "airblast",
+      "quote": "Sprays must be directed into the canopy.",
+      "page": 11
+    },
+    {
+      "id": "r6",
+      "kind": "wind_limit",
+      "method": "airblast",
+      "quote": "Do not apply when wind speeds exceed 15 mph at the application site.",
+      "page": 11,
+      "windMaxMph": 15
+    },
+    {
+      "id": "r7",
+      "kind": "inversion",
+      "method": "airblast",
+      "quote": "Do not apply during temperature inversions.",
+      "page": 11
+    },
+    {
+      "id": "r8",
+      "kind": "droplet_size",
+      "method": "ground",
+      "quote": "Applicators are required to use a medium or coarser droplet size according to the most current version of the American Society of Agricultural & Biological Engineers Standard 572 (ASABE S572).",
+      "page": 11
+    },
+    {
+      "id": "r9",
+      "kind": "wind_limit",
+      "method": "ground",
+      "quote": "Do not apply when wind speeds exceed 15 mph at the application site.",
+      "page": 11,
+      "windMaxMph": 15
+    },
+    {
+      "id": "r10",
+      "kind": "inversion",
+      "method": "ground",
+      "quote": "Do not apply during temperature inversions.",
+      "page": 11
+    },
+    {
+      "id": "r11",
+      "kind": "droplet_size",
+      "method": "any",
+      "quote": "Applicators are required to select nozzle and pressure that deliver a medium or coarser droplet size according to the most current version of the American Society of Agricultural & Biological Engineers Standard 572 (ASABE S572) for all applications.",
+      "page": 11
+    },
+    {
+      "id": "r12",
+      "kind": "wind_limit",
+      "method": "any",
+      "quote": "Do not apply when wind speeds exceed 15 miles per hour at the application site.",
+      "page": 11,
+      "windMaxMph": 15
+    },
+    {
+      "id": "r13",
+      "kind": "inversion",
+      "method": "any",
+      "quote": "Do not apply during temperature inversions.",
+      "page": 11
+    },
+    {
+      "id": "r14",
+      "kind": "filter_strip",
+      "method": "any",
+      "quote": "Only apply products containing Lambda-cyhalothrin onto fields where a maintained vegetative filter strip of at least 25 feet exists between the field edge and where a down gradient aquatic habitat exists.",
+      "page": 13,
+      "distanceFt": 25,
+      "protects": "aquatic habitat"
+    },
+    {
+      "id": "r15",
+      "kind": "water_buffer",
+      "method": "ground",
+      "quote": "Do not apply within 25 feet of aquatic habitats (such as, but not limited to, lakes, reservoirs, rivers, streams, marshes, ponds, estuaries, and commercial fish ponds).",
+      "page": 14,
+      "distanceFt": 25,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r16",
+      "kind": "water_buffer",
+      "method": "aerial_ulv",
+      "quote": "Do not apply within 450 feet of aquatic habitats (such as, but not limited to, lakes, reservoirs, rivers, streams, marshes, ponds, estuaries, and commercial fish ponds).",
+      "page": 14,
+      "distanceFt": 450,
+      "protects": "aquatic habitats",
+      "note": "Applications made by mosquito control districts and other public health officials are exempt from this requirement."
+    },
+    {
+      "id": "r17",
+      "kind": "water_buffer",
+      "method": "aerial",
+      "quote": "Do not apply within 150 feet of aquatic habitats (such as, but not limited to, lakes, reservoirs, rivers, streams, marshes, ponds, estuaries, and commercial fish ponds).",
+      "page": 14,
+      "distanceFt": 150,
+      "protects": "aquatic habitats"
+    },
+    {
+      "id": "r18",
+      "kind": "wind_limit",
+      "method": "chemigation",
+      "quote": "Do not apply when wind speed favors drift beyond the area intended for treatment or non-uniform distribution of treated water.",
+      "page": 17
+    },
+    {
+      "id": "r19",
+      "kind": "other",
+      "method": "aerial_ulv",
+      "quote": "Do not apply as an ultra-low volume (ULV) spray.",
+      "page": 28,
+      "crops": [
+        "rice",
+        "wild rice"
+      ],
+      "prohibited": true
+    },
+    {
+      "id": "r20",
+      "kind": "other",
+      "method": "aerial_ulv",
+      "quote": "Do not apply as an ultra-low volume (ULV) spray.",
+      "page": 52,
+      "crops": [
+        "sunflower"
+      ],
+      "prohibited": true
+    }
+  ],
+  "model": "gemini-3.5-flash-lite",
+  "latencyMs": 38235,
+  "mode": "replay",
+  "dropped": 0,
+  "problems": [],
+  "product": "Warrior II with Zeon Technology",
+  "epaRegNo": "100-1295",
+  "recordedAt": "2026-10-11T15:54:06.555Z",
+  "sourceRun": "live /api/extract",
+  "pdfSha256": "dcb3decf4e9f62ecf9455c8bc375bcfe0bf09d9802ae987acaa3f27ce3301420"
+}
