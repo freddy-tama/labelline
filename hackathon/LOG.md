@@ -165,3 +165,5 @@ All times are local UTC+8 unless marked otherwise. The hacking window runs from 
   - `dist/` has no "GEMINI" string.
 - **Effect:** the shell renders at 1920×1080 (panels 34/40/26%) and at 375 px (stacked, no horizontal scroll).
 - **Next:** Legs B, C and D in parallel.
+
+- **19:41 Published (user approved).** Public repo https://github.com/freddy-tama/labelline and Vercel production https://labelline-app.vercel.app (also labelline-two.vercel.app). Pre-publish: typecheck clean, 307/307 tests, build OK, no secrets in history. Hosted smoke test without a key: label PDF renders, live NHD/NWI water (15 features), field 117.7 ac, Open-Meteo wind strip; extraction shows the honest 503 "GEMINI_API_KEY is missing" notice. Still blocked on the key for recordings, eval and buffers.
