@@ -35,6 +35,7 @@
         </label>
 
         <div class="header-end">
+          <button class="btn btn-quiet btn-sm" type="button" id="guide-btn" aria-haspopup="dialog">How it works</button>
           <span class="badge badge-neutral" id="mode-badge">No extraction yet</span>
           <span class="badge badge-status" id="status-badge" role="status">Screening incomplete</span>
           <button class="btn btn-primary btn-sm" type="button" id="export-btn" title="Open a printable screening record in a new window" disabled>Export record</button>
@@ -113,6 +114,21 @@
       </footer>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <dialog class="welcome" id="welcome" aria-labelledby="welcome-title">
+      <p class="welcome-kicker">From pesticide label to no-spray zones</p>
+      <h2 id="welcome-title">How LabelLine works</h2>
+      <ol class="welcome-steps">
+        <li><span><strong>Pick a label.</strong> Six real EPA labels are built in, or upload your own PDF. Gemini pulls out every rule about water, wind and spray method.</span></li>
+        <li><span><strong>Check the highlights.</strong> Each rule is matched to its sentence on the PDF. Confirm the ones you trust.</span></li>
+        <li><span><strong>Load the field.</strong> The map draws no-spray zones around nearby rivers, ponds and wetlands, and counts the acres left outside them.</span></li>
+        <li><span><strong>Change the spray method.</strong> Switch Aerial to Ground and every zone redraws. Export a printable record when you're done.</span></li>
+      </ol>
+      <div class="welcome-actions">
+        <button class="btn btn-primary" type="button" id="welcome-demo">Try it with a sample</button>
+        <button class="btn btn-quiet" type="button" id="welcome-skip">I'll explore myself</button>
+      </div>
+      <p class="welcome-fine">A screening aid, not a legal determination: the label and the applicator make the call.</p>
+    </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

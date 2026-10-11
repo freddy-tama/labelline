@@ -923,6 +923,50 @@ function initMapControls(): void {
   });
 }
 
+// ---------- first-visit guide ----------
+
+const GUIDE_KEY = 'labelline.guide.seen';
+
+function guideSeen(): boolean {
+  try {
+    return localStorage.getItem(GUIDE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function markGuideSeen(): void {
+  try {
+    localStorage.setItem(GUIDE_KEY, '1');
+  } catch {
+    // storage blocked (private window): the guide simply shows again next time
+  }
+}
+
+/** "Try it with a sample": Brigade 2EC plus the sample field, then a pointer to the one click left. */
+async function startDemo(): Promise<void> {
+  for (let k = 0; k < 50 && view.get().samples.length === 0; k++) await new Promise((r) => setTimeout(r, 100));
+  const sample = view.get().samples.find((s) => s.slug === 'brigade2ec') ?? view.get().samples[0];
+  byId<HTMLButtonElement>('sample-field-btn').click();
+  if (!sample) return;
+  await loadLabel({ kind: 'sample', sample });
+  if (store.get().restrictions.length > 0) {
+    showToast('Brigade 2EC and the sample field are loaded. Confirm the 150 ft aerial rule on the right to draw its no-spray zone.');
+  }
+}
+
+function initGuide(): void {
+  const dialog = byId<HTMLDialogElement>('welcome');
+  dialog.addEventListener('close', markGuideSeen);
+  byId('welcome-skip').addEventListener('click', () => dialog.close());
+  byId('welcome-demo').addEventListener('click', () => {
+    dialog.close();
+    void startDemo();
+  });
+  byId('guide-btn').addEventListener('click', () => dialog.showModal());
+  if (!guideSeen()) dialog.showModal();
+}
+
 // ---------- start ----------
 
 initTabs();
@@ -934,5 +978,6 @@ initHeader({
 initLabelControls();
 initMapControls();
 void loadSamples();
+initGuide();
 syncChecklist();
 for (const part of ['header', 'restrictions', 'readout', 'water', 'wind', 'checklist', 'evidence', 'tabs', 'hint'] as Part[]) renderPart(part);
