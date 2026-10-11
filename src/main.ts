@@ -41,6 +41,7 @@ import { renderEvidence } from './ui/evidence';
 import { renderWind } from './ui/windStrip';
 import { renderReadout, renderWaterChip, renderWaterNotes } from './ui/fieldPanel';
 import { showToast, view, type SampleLabel, type ViewState } from './ui/viewState';
+import { startTour, type TourStep } from './ui/tour';
 
 const BASE_URL: string = import.meta.env.BASE_URL ?? '/';
 /** Mapped water is always queried at least this far out (the largest common label buffer, ULV aerial). */
@@ -955,16 +956,74 @@ async function startDemo(): Promise<void> {
   }
 }
 
+const TOUR: TourStep[] = [
+  {
+    title: 'Welcome to LabelLine',
+    text: 'LabelLine turns the water rules in a pesticide label into no-spray zones on a field. This quick tour shows what each part of the screen does.',
+  },
+  {
+    target: '#pdf-panel .panel-head',
+    title: 'Pick a label',
+    text: 'Choose one of six real EPA pesticide labels, or upload your own PDF. Gemini reads it and pulls out every rule about water, wind and spray method.',
+  },
+  {
+    target: '#pdf-host',
+    title: 'The label itself',
+    text: 'The PDF opens here. Every rule LabelLine uses is highlighted on its page, so you can always check the original sentence.',
+  },
+  {
+    target: '#tabpanel-restrictions',
+    title: 'Rules from the label',
+    text: "Each rule shows its distance, spray method and page. Click Confirm on the ones you trust: only confirmed rules draw anything. Rules that aren't found in the PDF stay red.",
+  },
+  {
+    target: '.seg-group',
+    title: 'Spray method',
+    text: 'Buffer distances depend on how you spray. Switch between Ground, Aerial and the others, and set the crop next to it. The zones redraw to match.',
+  },
+  {
+    target: '.panel-map .panel-head',
+    title: 'Your field',
+    text: 'Load the sample field, or click Draw field and click its corners on the map. The water chip shows whether stream and wetland data loaded.',
+  },
+  {
+    target: '#map',
+    title: 'The map',
+    text: 'Blue and teal are mapped water, red is the no-spray zone, and green is the area left outside it. Federal maps miss small ponds and ditches, so add them with the Pond, Ditch and Point buttons.',
+  },
+  {
+    target: '#readout',
+    title: 'The numbers',
+    text: 'Field size, acres inside the no-spray zones and acres left outside them, plus which rule set the distance.',
+  },
+  {
+    target: '#restrictions-region .tabs',
+    title: 'Checklist and Evidence',
+    text: 'Checklist lists what to check before spraying: on-site wind, the endangered-species bulletin and a field walk. Evidence shows how accurately Gemini read six real labels.',
+  },
+  {
+    target: '#wind-strip',
+    title: 'Wind forecast',
+    text: "The next 24 hours of wind at the field, checked against the label's wind limit. It's a forecast, so wind still has to be measured on site.",
+  },
+  {
+    target: '.header-end',
+    title: 'Status and record',
+    text: 'The header says whether the screening is complete. Export record opens a printable record of every rule, page and decision. How it works brings this tour back.',
+  },
+  {
+    title: "You're ready",
+    text: 'Start by picking a label at the top left. LabelLine is a screening aid: the label and the applicator make the call.',
+  },
+];
+
+function openTour(): void {
+  startTour(TOUR, { onClose: markGuideSeen, finalAction: { label: 'Load a sample for me', run: () => void startDemo() } });
+}
+
 function initGuide(): void {
-  const dialog = byId<HTMLDialogElement>('welcome');
-  dialog.addEventListener('close', markGuideSeen);
-  byId('welcome-skip').addEventListener('click', () => dialog.close());
-  byId('welcome-demo').addEventListener('click', () => {
-    dialog.close();
-    void startDemo();
-  });
-  byId('guide-btn').addEventListener('click', () => dialog.showModal());
-  if (!guideSeen()) dialog.showModal();
+  byId('guide-btn').addEventListener('click', openTour);
+  if (!guideSeen()) openTour();
 }
 
 // ---------- start ----------
