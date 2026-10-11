@@ -265,7 +265,7 @@ async function loadLabel(source: LabelSource): Promise<void> {
       view.set({ extraction: { phase: 'scanned' } });
       return;
     }
-    await extract('auto');
+    await extract('open');
   } catch (error) {
     if (ctrl.signal.aborted) return;
     // Reset the sample list so choosing the same sample again fires "change" and reloads it.
@@ -339,8 +339,12 @@ async function replay(slug: string, ctrl: AbortController, liveError?: string): 
   }
 }
 
-/** 'auto': live, then the recording if live fails. 'live': live only. 'replay': the recording only. */
-async function extract(mode: 'auto' | 'live' | 'replay'): Promise<void> {
+/**
+ * 'open' (a label was just loaded): a bundled sample with a recording opens it at once, so the demo never waits;
+ * its notice offers Run live. Anything else (an uploaded label) runs live.
+ * 'auto': live, then the recording if live fails. 'live': live only. 'replay': the recording only.
+ */
+async function extract(mode: 'open' | 'auto' | 'live' | 'replay'): Promise<void> {
   const label = store.get().labelFile;
   const pages = store.get().pages;
   if (!label || pages.length === 0) return;
@@ -360,6 +364,7 @@ async function extract(mode: 'auto' | 'live' | 'replay'): Promise<void> {
   const replayAvailable = slug ? await hasReplay(slug, { signal: ctrl.signal }) : false;
   if (ctrl.signal.aborted) return;
   if (mode === 'replay' && slug) return replay(slug, ctrl);
+  if (mode === 'open' && replayAvailable && slug) return replay(slug, ctrl);
 
   view.set({ extraction: { phase: 'extracting_live', startedAt: Date.now(), replayAvailable } });
   startTicker();
